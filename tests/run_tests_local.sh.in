@@ -1,0 +1,6 @@
+#!/bin/sh
+if [ -z "$PYTHON_EXE" ]; then
+    PYTHON_EXE="@PYTHON@"
+fi
+
+PYTHONDONTWRITEBYTECODE=1 LC_ALL=C PYTHONPATH="@top_srcdir@:$PYTHONPATH" "$PYTHON_EXE" @top_srcdir@/tests/testrunner.py $@

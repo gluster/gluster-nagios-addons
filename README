@@ -1,0 +1,28 @@
+
+Gluster Nagios Add-ons:
+=======================
+Nagios plugin, scripts, configuration files etc for gluster nodes.
+
+
+Installation
+============
+The Gluster Nagios Add-ons can be used by following the standard
+autotools installation process, documented in the INSTALL file. As a
+quick start you can do
+
+   ./configure --prefix=/usr --sysconfdir=/etc \
+        --localstatedir=/var --libdir=/usr/lib
+   make
+   sudo make install
+
+
+Packaging
+=========
+The 'gluster-nagios-addons.spec' file demonstrates how to distribute
+this as an RPM package.
+
+
+Getting Help
+============
+
+-- End of readme

@@ -1,0 +1,11 @@
+This test suite is built on the Nose framework.  For more information see:
+
+    http://readthedocs.org/docs/nose/en/latest/
+
+Running the test suite:
+-----------------------
+
+Running these tests is easy.
+
+~$ python testrunner.py
+~$ python testrunner.py *.py

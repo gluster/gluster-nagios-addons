@@ -1,0 +1,10 @@
+#!/bin/sh
+if [ -z "$PYTHON_EXE" ]; then
+    PYTHON_EXE="@PYTHON@"
+fi
+
+prefix="@prefix@"
+exec_prefix="@exec_prefix@"
+pyexecdir="@pyexecdir@"
+libdir="@libdir@"
+LC_ALL=C PYTHONPATH="@glusternagioscommonpylibdir@:@nagiospluginsdir@" "$PYTHON_EXE" @top_srcdir@/tests/testrunner.py $@
