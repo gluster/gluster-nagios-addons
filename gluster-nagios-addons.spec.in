@@ -3,13 +3,33 @@
 %global _for_fedora_koji_builds 0
 
 %if ( 0%{?fedora} && 0%{?fedora} > 16 ) || ( 0%{?rhel} && 0%{?rhel} > 6 )
-%global           _with_systemd true
+%global _with_systemd true
+%endif
+
+%if ( 0%{?fedora} && 0%{?fedora} > 17 ) || ( 0%{?rhel} && 0%{?rhel} > 6 )
+%global _with_firewalld true
 %endif
 
 # From https://fedoraproject.org/wiki/Packaging:Python#Macros
 %if ( 0%{?rhel} && 0%{?rhel} <= 5 )
 %{!?python_sitelib: %global python_sitelib %(python -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
 %{!?python_sitearch: %global python_sitearch %(python -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
+%endif
+
+%if ( 0%{?_with_systemd:1} )
+%define _init_enable()  /bin/systemctl enable %1.service ;
+%define _init_disable() /bin/systemctl disable %1.service ;
+%define _init_restart() /bin/systemctl restart %1.service ;
+%define _init_try_restart() /bin/systemctl try-restart %1.service ;
+%define _init_stop()    /bin/systemctl stop %1.service ;
+%define _init_install() install -D -p -m 0644 %1 %{buildroot}%{_unitdir}/%2.service ;
+%else
+%define _init_enable()  /sbin/chkconfig --add %1 ;
+%define _init_disable() /sbin/chkconfig --del %1 ;
+%define _init_restart() /sbin/service %1 restart &>/dev/null ;
+%define _init_try_restart() /sbin/service %1 condrestart &>/dev/null ;
+%define _init_stop()    /sbin/service %1 stop &>/dev/null ;
+%define _init_install() install -D -p -m 0755 %1 %{buildroot}%{_sysconfdir}/init.d/%2 ;
 %endif
 
 Summary: Gluster node management add-ons for Nagios
@@ -27,13 +47,30 @@ BuildRequires:    python-pep8
 BuildRequires:    python-mock
 BuildRequires:    python-nose
 BuildRequires:    python-devel
+%if ( 0%{?_with_systemd:1} )
+BuildRequires:    systemd-units
+Requires(post):   systemd-units
+Requires(preun):  systemd-units
+%else
+Requires(post):   /sbin/service
+Requires(post):   /sbin/chkconfig
+Requires(preun):  /sbin/service
+Requires(preun):  /sbin/chkconfig
+%endif
+%if ( 0%{?_with_firewalld:1} )
+Requires(post):   firewalld
+%else
+Requires(post):   iptables
+%endif
 Requires:         gluster-nagios-common
+Requires:         libselinux-python
+Requires:         nrpe
 Requires:         python-argparse
 Requires:         python-ethtool
+Requires:         python-inotify
 Requires:         python-netaddr
 Requires:         python-pthreading
-Requires:         python-pyinotify
-Requires:         python-selinux
+Requires:         sysstat
 
 %description
 Nagios plugin, scripts, configuration files etc for gluster nodes.
@@ -68,9 +105,41 @@ make install DESTDIR=%{buildroot}
 %clean
 rm -rf %{buildroot}
 
+
+%post
+%if ( 0%{?_with_firewalld:1} )
+/bin/firewall-cmd --permanent --add-port=5666/tcp
+/bin/firewall-cmd --add-port=5666/tcp
+%else
+/sbin/iptables -I INPUT 1 -p tcp --dport 5666 -j ACCEPT
+/sbin/service iptables save
+%_init_restart iptables
+%endif
+
+cat >> %{_sysconfdir}/nagios/nrpe.cfg <<EOF
+### gluster nrpe plugins ###
+command[check_disk_and_inode]=%{_libdir}/nagios/plugins/gluster/check_disk_and_inode.py -w 80 -c 90 -l -i /boot -i /var -i /root -n
+command[check_memory]=%{_libdir}/nagios/plugins/gluster/sadf.py -m -w 80 -c 90
+command[check_swap_usage]=%{_libdir}/nagios/plugins/gluster/sadf.py -s -w 80 -c 90
+command[check_cpu_multicore]=%{_libdir}/nagios/plugins/gluster/sadf.py -cp -w 80 -c 90
+command[check_interfaces]=%{_libdir}/nagios/plugins/gluster/sadf.py -n -e lo
+EOF
+%_init_enable nrpe
+%_init_restart crond
+
+
+%preun
+sed -i '/gluster nrpe plugins/d' %{_sysconfdir}/nagios/nrpe.cfg
+sed -i '/check_disk_and_inode/d' %{_sysconfdir}/nagios/nrpe.cfg
+sed -i '/check_memory/d' %{_sysconfdir}/nagios/nrpe.cfg
+sed -i '/check_swap_usage/d' %{_sysconfdir}/nagios/nrpe.cfg
+sed -i '/sadf.py/d' %{_sysconfdir}/nagios/nrpe.cfg
+sed -i '/check_cpu_multicore.py/d' %{_sysconfdir}/nagios/nrpe.cfg
+
 %files
 %defattr(-,root,root,-)
-%{_libdir}/nagios/*
+%{_libdir}/nagios/plugins/gluster/*
+%{_sysconfdir}/cron.d/gluster-sysstat.crontab
 
 %files tests
 %defattr(-,root,root,-)
