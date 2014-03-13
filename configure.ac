@@ -82,6 +82,7 @@ fi
 AX_PYTHON_MODULE([argparse], [fatal])
 AX_PYTHON_MODULE([ethtool], [fatal])
 AX_PYTHON_MODULE([glusternagios], [fatal])
+AX_PYTHON_MODULE([mock], [fatal])
 AX_PYTHON_MODULE([netaddr], [fatal])
 AX_PYTHON_MODULE([pthreading], [fatal])
 AX_PYTHON_MODULE([pyinotify], [fatal])

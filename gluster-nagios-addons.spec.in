@@ -24,6 +24,7 @@ Source0:          %{name}-%{version}.tar.gz
 BuildRoot:        %{_tmppath}/%{name}-%{version}-root
 BuildRequires:    pyflakes
 BuildRequires:    python-pep8
+BuildRequires:    python-mock
 BuildRequires:    python-nose
 BuildRequires:    python-devel
 Requires:         gluster-nagios-common
@@ -43,6 +44,7 @@ Group:            Development/Tools
 Requires:         %{name} = %{version}-%{release}
 Requires:         pyflakes
 Requires:         python-pep8
+Requires:         python-mock
 Requires:         python-nose
 Requires:         python-devel
 

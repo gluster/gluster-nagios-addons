@@ -19,6 +19,8 @@
 #
 
 test_modules = \
+	test_check_remote_host.py \
+	test_sadf.py \
 	$(NULL)
 
 dist_glusternagiosaddonstests_DATA = \
