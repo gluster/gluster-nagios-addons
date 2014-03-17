@@ -22,50 +22,50 @@ import re
 import sys
 import commands
 from optparse import OptionParser
+from glusternagios import utils
+
+WARNING_LEVEL = 80
+CRITICAL_LEVEL = 90
+
+
+def getVal(val):
+    dmatch = re.compile('[0-9]+').match(val)
+    if (dmatch):
+        return float(eval(dmatch.group(0)))
+    else:
+        return 0
 
 
 def getUsageAndFree(command, lvm):
+    disk = {'path': None, 'usePercent': None, 'avail': None,
+            'used': None, 'size': None, 'fs': None}
     status = commands.getstatusoutput(command)[1].split()
-    path = status[-1]
-    usagePer = status[-2]
-    availSpace = status[-3]
-    usedSpace = status[-4]
-    device = status[-6].split("-")[-1]
-    dmatch = re.compile('[0-9]+').match(usagePer)
-    if (dmatch):
-        usage = eval(dmatch.group(0))
-        return (float(usage), float(100 - usage), usedSpace,
-                availSpace, device, path)
+    disk['path'] = status[-1]
+    disk['avail'] = getVal(status[-3])
+    disk['used'] = getVal(status[-4])
+    disk['size'] = getVal(status[-5])
+    disk['fs'] = status[-6]
+    disk['usePcent'] = getVal(status[-2])
+    disk['availPcent'] = 100 - disk['usePcent']
+    return disk
+
+
+def getDisk(path, usage=None, lvm=False):
+    if usage:
+        return getUsageAndFree("df -B%s %s" % (usage, path), lvm)
     else:
-        return None, None, None, None, None, None
+        return getUsageAndFree("df -BG %s" % path, lvm)
 
 
-def getDisk(path, readable=False, lvm=False):
-    if readable:
-        return getUsageAndFree("df -m %s" % path, lvm)
-    else:
-        return getUsageAndFree("df -kh %s" % path, lvm)
-
-
-def getInode(path, readable=False, lvm=False):
+def getInode(path, lvm=False):
     return getUsageAndFree("df -i %s" % path, lvm)
 
 
-def appendStatus(lst, level, typ, device, mpath, usage):
-    if 2 == level:
-        level = "crit"
-    elif 1 == level:
-        level = "warn"
-    else:
-        level = "ok"
-    lst.append("%s:%s:%s;%s;%s" % (level, device, mpath, usage))
-
-
-def getMounts(searchQuery=None, excludeList=[]):
+def getMounts(searchQuery, excludeList=[]):
     mountPaths = []
     f = open("/etc/mtab")
     for i in f.readlines():
-        if searchQuery and i.startswith(searchQuery):
+        if i.startswith(searchQuery):
             if not excludeList:
                 mountPaths.append(i.split()[0])
             else:
@@ -80,124 +80,156 @@ def getMounts(searchQuery=None, excludeList=[]):
 def parse_input():
     parser = OptionParser()
     parser.add_option('-w', '--warning', action='store', type='int',
-                      dest='warn', help='Warning count in %', default=80)
+                      dest='warn',
+                      help='Warning count in %', default=WARNING_LEVEL)
     parser.add_option('-c', '--critical', action='store', type='int',
-                      dest='crit', help='Critical count in %', default=90)
-    parser.add_option('-u', '--usage', action="store_true", dest='usage',
-                      help='Output disk and inode usage', default=False)
+                      dest='crit',
+                      help='Critical count in %', default=CRITICAL_LEVEL)
+    parser.add_option('-u', '--usage', action="store", dest='usage',
+                      help='Usage in %/GB/MB/KB', default=None)
     parser.add_option('-l', '--lvm', action="store_true",
-                      dest='lvm', help='List lvm mounts', default=False)
+                      dest='lvm',
+                      help='List lvm mounts', default=False)
+    parser.add_option('-d', '--inode', action="store_true", dest='inode',
+                      help='List inode usage along with disk/brick usage',
+                      default=False)
     parser.add_option('-a', '--all', action="store_true",
-                      dest='all', help='List all mounts', default=False)
+                      dest='all',
+                      help='List all mounts', default=False)
     parser.add_option('-n', '--ignore', action="store_true",
-                      dest='ignore', help='Ignore errors', default=False)
+                      dest='ignore',
+                      help='Ignore errors', default=False)
     parser.add_option('-i', '--include', action='append', type='string',
-                      dest='mountPath', help='Mount path', default=[])
+                      dest='mountPath',
+                      help='Mount path', default=[])
     parser.add_option('-x', '--exclude', action="append", type='string',
-                      dest='exclude', help='Exclude disk')
+                      dest='exclude',
+                      help='Exclude disk/brick')
     return parser.parse_args()
 
 
-if __name__ == '__main__':
-    disk = []
+def showDiskUsage(warn, crit, mountPaths, toListInode, usage=False,
+                  isLvm=False, ignoreError=False):
+    diskPerf = []
     warnList = []
     critList = []
     diskList = []
     mounts = []
     level = -1
-    (options, args) = parse_input()
 
-    if len(args) > 2:
-        if args[0].isdigit() and args[1].isdigit():
-            warn = int(args[0])
-            crit = int(args[1])
-            options.mountPath = args[2:]
+    for path in mountPaths:
+        disk = getDisk(path,
+                       usage,
+                       isLvm)
+
+        inode = getInode(path,
+                         isLvm)
+
+        if disk['path'] in mounts:
+            continue
+        if not disk['used'] or not inode['used']:
+            if ignoreError:
+                continue
+            else:
+                sys.exit(utils.PluginStatusCode.UNKNOWN)
+
+        mounts.append(disk['path'])
+        if usage:
+            data = "%s=%.1f;%.1f;%.1f;0;%.1f" % (
+                disk['path'],
+                disk['used'],
+                warn * disk['size'] / 100,
+                crit * disk['size'] / 100,
+                disk['size'])
+            if toListInode:
+                data += " %s=%.1f;%.1f;%.1f;0;%.1f" % (
+                    inode['path'],
+                    inode['used'],
+                    warn * inode['used'] / 100,
+                    crit * inode['used'] / 100,
+                    inode['used'])
         else:
-            warn = 80
-            crit = 90
-            options.mountPath = args
-    else:
-        crit = options.crit
-        warn = options.warn
+            data = "%s=%.2f;%s;%s;0;100" % (
+                disk['path'],
+                disk['usePcent'],
+                warn,
+                crit)
+
+            if toListInode:
+                data += " %s=%.2f;%s;%s;0;100" % (
+                    inode['path'],
+                    inode['usePcent'],
+                    warn,
+                    crit)
+        diskPerf.append(data)
+
+        if disk['usePcent'] >= crit or inode['usePcent'] >= crit:
+            if disk['usePcent'] >= crit:
+                critList.append(
+                    "crit:disk:%s;%s;%s" % (disk['fs'],
+                                            disk['path'],
+                                            disk['usePcent']))
+            else:
+                critList.append("crit:inode:%s;%s;%s" % (inode['fs'],
+                                                         inode['path'],
+                                                         inode['usePcent']))
+            if not level > utils.PluginStatusCode.WARNING:
+                level = utils.PluginStatusCode.CRITICAL
+        elif (disk['usePcent'] >= warn and disk['usePcent'] < crit) or (
+                inode['usePcent'] >= warn and inode['usePcent'] < crit):
+            if disk['usePcent'] >= warn:
+                warnList.append("warn:disk:%s;%s;%s" % (disk['fs'],
+                                                        disk['path'],
+                                                        disk['usePcent']))
+            else:
+                warnList.append("warn:inode:%s;%s;%s" % (inode['fs'],
+                                                         inode['path'],
+                                                         inode['usePcent']))
+            if not level > utils.PluginStatusCode.OK:
+                level = utils.PluginStatusCode.WARNING
+        else:
+            diskList.append("%s=%s" % (disk['fs'], disk['path']))
+
+    msg = " ".join(critList + warnList)
+    if not msg:
+        msg += " disks:mounts:(" + ",".join(diskList) + ")"
+
+    return level, msg, diskPerf
+
+
+if __name__ == '__main__':
+    (options, args) = parse_input()
 
     if options.lvm:
         searchQuery = "/dev/mapper"
-    elif options.all:
-        searchQuery = None
     else:
         searchQuery = "/"
 
     if not options.mountPath or options.lvm or options.all:
         options.mountPath += getMounts(searchQuery, options.exclude)
 
-    #if not options.mountPath:
-    #    parser.print_help()
-    #    sys.exit(1)
+    level, msg, diskPerf = showDiskUsage(options.warn,
+                                         options.crit,
+                                         options.mountPath,
+                                         options.inode,
+                                         options.usage,
+                                         options.lvm,
+                                         options.ignore)
 
-    for path in options.mountPath:
-        diskUsage, diskFree, used, avail, dev, mpath = getDisk(path,
-                                                               options.usage,
-                                                               options.lvm)
-        inodeUsage, inodeFree, iused, iavail, idev, ipath = getInode(
-            path,
-            options.usage,
-            options.lvm)
-        if mpath in mounts:
-            continue
-        if not used or not iused:
-            if options.ignore:
-                continue
-            else:
-                sys.exit(3)
-
-        mounts.append(mpath)
-        if options.usage:
-            total = (float(used) + float(avail)) / 1000
-            itot = (float(iused) + float(iavail)) / 1000
-            disk.append("%s=%.1f;%.1f;%.1f;0;%.1f %s=%.1f;%.1f;%.1f;0;%.1f" % (
-                mpath,
-                float(used) / 1000,
-                warn * total / 100,
-                crit * total / 100,
-                total,
-                ipath,
-                float(iused) / 1000,
-                warn * itot / 100,
-                crit * itot / 100,
-                itot))
-        else:
-            disk.append("%s=%.2f;%s;%s;0;100 %s=%.2f;%s;%s;0;100" % (
-                mpath, diskUsage, warn, crit, ipath, inodeUsage, warn, crit))
-
-        if diskUsage >= crit or inodeUsage >= crit:
-            if diskUsage >= crit:
-                critList.append("crit:disk:%s;%s;%s" % (dev, mpath, diskUsage))
-            else:
-                critList.append("crit:inode:%s;%s;%s" % (idev, ipath,
-                                                         inodeUsage))
-            if not level > 1:
-                level = 2
-        elif (diskUsage >= warn and diskUsage < crit) or (
-                inodeUsage >= warn and inodeUsage < crit):
-            if diskUsage >= warn:
-                warnList.append("warn:disk:%s;%s;%s" % (dev, mpath, diskUsage))
-            else:
-                warnList.append("warn:inode:%s;%s;%s" % (idev, ipath,
-                                                         inodeUsage))
-            if not level > 0:
-                level = 1
-        else:
-            diskList.append("%s:%s" % (dev, mpath))
-
-    msg = " ".join(critList + warnList)
-    if not msg:
-        msg += " disks:mounts:(" + ",".join(diskList) + ")"
-
-    if 2 == level:
-        print "CRITICAL : %s | %s" % (msg, " ".join(disk))
-        sys.exit(2)
-    elif 1 == level:
-        print "WARNING : %s | %s" % (msg, " ".join(disk))
-        sys.exit(1)
+    if utils.PluginStatusCode.CRITICAL == level:
+        sys.stdout.write("%s : %s | %s\n" % (
+            utils.PluginStatus.CRITICAL,
+            msg,
+            " ".join(diskPerf)))
+        sys.exit(utils.PluginStatusCode.CRITICAL)
+    elif utils.PluginStatusCode.WARNING == level:
+        sys.stdout.write("%s : %s | %s\n" % (
+            utils.PluginStatus.WARNING,
+            msg,
+            " ".join(diskPerf)))
+        sys.exit(utils.PluginStatusCode.WARNING)
     else:
-        print "OK : %s | %s" % (msg, " ".join(disk))
+        sys.stdout.write("%s : %s | %s\n" % (
+            utils.PluginStatus.OK,
+            msg,
+            " ".join(diskPerf)))

@@ -116,13 +116,18 @@ rm -rf %{buildroot}
 %_init_restart iptables
 %endif
 
+if grep -q "dont_blame_nrpe=0" %{_sysconfdir}/nagios/nrpe.cfg ; then
+  sed -i -e 's/dont_blame_nrpe=0/dont_blame_nrpe=1/g' %{_sysconfdir}/nagios/nrpe.cfg
+fi
+
 cat >> %{_sysconfdir}/nagios/nrpe.cfg <<EOF
 ### gluster nrpe plugins ###
-command[check_disk_and_inode]=%{_libdir}/nagios/plugins/gluster/check_disk_and_inode.py -w 80 -c 90 -l -i /boot -i /var -i /root -n
+command[check_disk_and_inode]=%{_libdir}/nagios/plugins/gluster/check_disk_and_inode.py -w 80 -c 90 -l -i /boot -i /var -i /root -n --inode
 command[check_memory]=%{_libdir}/nagios/plugins/gluster/memory.py -w 80 -c 90
 command[check_swap_usage]=%{_libdir}/nagios/plugins/gluster/swap.py -w 80 -c 90
 command[check_cpu_multicore]=%{_libdir}/nagios/plugins/gluster/cpu.py -w 80 -c 90
 command[check_interfaces]=%{_libdir}/nagios/plugins/gluster/network.py -e lo -e ';vdsmdummy;'
+command[check_brick_usage]=/usr/lib64/nagios/plugins/gluster/check_disk_and_inode.py -w 80 -c 90 -u MB -n -i \$ARG1\$
 EOF
 %_init_enable nrpe
 %_init_restart crond
