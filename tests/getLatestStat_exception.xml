@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sysstat PUBLIC "DTD v2.16 sysstat //EN"
+"http://pagesperso-orange.fr/sebastien.godard/sysstat-2.16.dtd">
+<sysstat>
+	<sysdata-version>2.16</sysdata-version>
+	<host nodename="localhost.localdomain">
+		<sysname>Linux</sysname>
+		<release>3.13.6-200.fc20.x86_64</release>
+		<machine>x86_64</machine>
+		<number-of-cpus>4</number-of-cpus>
+		<file-date>2014-03-19</file-date>
+		<restarts>
+		</restarts>
+	</host>
+</sysstat>

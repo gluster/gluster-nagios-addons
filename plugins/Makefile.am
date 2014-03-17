@@ -5,10 +5,14 @@ crond_DATA = \
 
 dist_glusternagiosplugins_PYTHON = \
 	check_disk_and_inode.py \
+	cpu.py \
+	__init__.py \
+	memory.py \
+	network.py \
 	sadf.py \
+	swap.py \
 	$(NULL)
 
 EXTRA_DIST = \
 	$(crond_DATA) \
-	__init__.py \
 	$(NULL)

@@ -19,10 +19,20 @@
 #
 
 test_modules = \
+	test_cpu.py \
+	test_cpu_dataFile.py \
+	test_memory.py \
+	test_memory_dataFile.py \
+	test_network.py \
+	test_network_dataFile.py \
 	test_sadf.py \
+	test_swap.py \
+	test_swap_dataFile.py \
 	$(NULL)
 
 dist_glusternagiosaddonstests_DATA = \
+	getLatestStat_exception.xml \
+	getLatestStat_success.xml \
 	$(NULL)
 
 dist_glusternagiosaddonstests_PYTHON = \

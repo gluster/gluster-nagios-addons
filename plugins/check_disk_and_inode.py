@@ -155,8 +155,16 @@ if __name__ == '__main__':
             total = (float(used) + float(avail)) / 1000
             itot = (float(iused) + float(iavail)) / 1000
             disk.append("%s=%.1f;%.1f;%.1f;0;%.1f %s=%.1f;%.1f;%.1f;0;%.1f" % (
-                mpath, float(used)/1000, warn*total/100, crit*total/100, total,
-                ipath, float(iused)/1000, warn*itot/100, crit*itot/100, itot))
+                mpath,
+                float(used) / 1000,
+                warn * total / 100,
+                crit * total / 100,
+                total,
+                ipath,
+                float(iused) / 1000,
+                warn * itot / 100,
+                crit * itot / 100,
+                itot))
         else:
             disk.append("%s=%.2f;%s;%s;0;100 %s=%.2f;%s;%s;0;100" % (
                 mpath, diskUsage, warn, crit, ipath, inodeUsage, warn, crit))

@@ -18,173 +18,49 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import mock
+from datetime import datetime
 import xml.etree.cElementTree as etree
-
 from testrunner import PluginsTestCase as TestCaseBase
-from plugins import sadf
+
+import plugins
 
 
 class sadfTests(TestCaseBase):
+    @mock.patch('plugins.sadf.utcnow')
+    def test_getLatestStat_success(self, utcnow_mock):
+        expectedDict = {'cpu-load': {'cpu': {'idle': '96.62',
+                                             'iowait': '0.17',
+                                             'nice': '0.00',
+                                             'number': 'all',
+                                             'steal': '0.00',
+                                             'system': '1.20',
+                                             'user': '2.01'}},
+                        'date': '2014-03-19',
+                        'interval': '60',
+                        'time': '10:19:01',
+                        'utc': '1'}
+        utcnow_mock.return_value = datetime(2014, 3, 19, 10, 19, 22,
+                                            164227)
+        with open("getLatestStat_success.xml") as f:
+            out = f.read()
+            tree = etree.fromstring(out)
+        outDict = plugins.sadf.getLatestStat(tree)
+        self.assertEquals(expectedDict, outDict)
 
-    def _etree_to_dict_arg_test(self):
-        out = """<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE sysstat PUBLIC "DTD v2.15 sysstat //EN"
-"http://pagesperso-orange.fr/sebastien.godard/sysstat-2.15.dtd">
-<sysstat>
-<sysdata-version>2.15</sysdata-version>
-<host nodename="dhcp-0-171.blr.redhat.com">
-<sysname>Linux</sysname>
-<release>3.11.3-201.fc19.x86_64</release>
-<machine>x86_64</machine>
-<number-of-cpus>4</number-of-cpus>
-<file-date>2014-03-07</file-date>
-<statistics>
-<timestamp date="2014-03-07" time="05:00:01" utc="1" interval="59">
-<memory per="second" unit="kB">
-<memfree>6821428</memfree>
-<memused>1049448</memused>
-<memused-percent>13.33</memused-percent>
-<buffers>49416</buffers>
-<cached>536932</cached>
-<commit>2127484</commit>
-<commit-percent>7.38</commit-percent>
-<active>361428</active>
-<inactive>487048</inactive>
-<dirty>1256</dirty>
-</memory>
-</timestamp>
-</statistics>
-<restarts>
-<boot date="2014-03-07" time="04:58:08" utc="1"/>
-</restarts>
-</host>
-</sysstat>
-"""
-        tree = etree.fromstring(out)
-        expected_dict = \
-            {'sysstat': {'host':
-                         {'sysname': 'Linux',
-                          'statistics': {'timestamp':
-                                         {'date': '2014-03-07',
-                                          'utc': '1', 'interval': '59',
-                                          'time': '05:00:01',
-                                          'memory':
-                                          {'memused-percent': '13.33',
-                                           'cached': '536932',
-                                           'unit': 'kB',
-                                           'per': 'second',
-                                           'memfree': '6821428',
-                                           'inactive': '487048',
-                                           'commit-percent': '7.38',
-                                           'active': '361428',
-                                           'commit': '2127484',
-                                           'memused': '1049448',
-                                           'buffers': '49416',
-                                           'dirty': '1256'}}},
-                          'nodename': 'dhcp-0-171.blr.redhat.com',
-                          'file-date': '2014-03-07',
-                          'number-of-cpus': '4',
-                          'restarts': {'boot':
-                                       {'date': '2014-03-07', 'utc': '1',
-                                        'time': '04:58:08'}},
-                          'machine': 'x86_64',
-                          'release': '3.11.3-201.fc19.x86_64'},
-                         'sysdata-version': '2.15'}}
+    def test_getLatestStat_failure(self):
+        expectedValue = None
+        with open("getLatestStat_success.xml") as f:
+            out = f.read()
+            tree = etree.fromstring(out)
+        outValue = plugins.sadf.getLatestStat(tree)
+        self.assertEquals(expectedValue, outValue)
 
-        actual_dict = sadf.etree_to_dict(tree)
-        self.assertEquals(actual_dict, expected_dict)
+    def test_getLatestStat_exception(self):
+        def _getLatestStat():
+            with open("getLatestStat_exception.xml") as f:
+                out = f.read()
+            tree = etree.fromstring(out)
+            plugins.sadf.getLatestStat(tree)
 
-    def _etree_to_dict_string_test(self):
-        out = """<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE sysstat PUBLIC "DTD v2.15 sysstat //EN"
-"http://pagesperso-orange.fr/sebastien.godard/sysstat-2.15.dtd">
-<sysstat>
-<sysdata-version>2.15</sysdata-version>
-<host nodename="dhcp-0-171.blr.redhat.com">
-<sysname>Linux</sysname>
-<release>3.11.3-201.fc19.x86_64</release>
-<machine>x86_64</machine>
-<number-of-cpus>4</number-of-cpus>
-<file-date>2014-03-07</file-date>
-<statistics>
-<timestamp date="2014-03-07" time="05:00:01" utc="1" interval="59">
-<memory per="second" unit="kB">
-Test string
-<memfree>6821428</memfree>
-<memused>1049448</memused>
-<memused-percent>13.33</memused-percent>
-<buffers>49416</buffers>
-<cached>536932</cached>
-<commit>2127484</commit>
-<commit-percent>7.38</commit-percent>
-<active>361428</active>
-<inactive>487048</inactive>
-<dirty>1256</dirty>
-</memory>
-</timestamp>
-</statistics>
-<restarts>
-<boot date="2014-03-07" time="04:58:08" utc="1"/>
-</restarts>
-</host>
-</sysstat>
-"""
-        tree = etree.fromstring(out)
-        expected_dict = \
-            {'sysstat': {'host':
-                         {'sysname': 'Linux',
-                          'statistics': {'timestamp':
-                                         {'date': '2014-03-07',
-                                          'utc': '1', 'interval': '59',
-                                          'time': '05:00:01', 'memory':
-                                          {'#text': 'Test string',
-                                           'memused-percent': '13.33',
-                                           'cached': '536932', 'unit': 'kB',
-                                           'per': 'second',
-                                           'memfree': '6821428',
-                                           'inactive': '487048',
-                                           'commit-percent': '7.38',
-                                           'active': '361428',
-                                           'commit': '2127484',
-                                           'memused': '1049448',
-                                           'buffers': '49416',
-                                           'dirty': '1256'}}},
-                          'nodename': 'dhcp-0-171.blr.redhat.com',
-                          'file-date': '2014-03-07', 'number-of-cpus': '4',
-                          'restarts': {'boot': {'date': '2014-03-07',
-                                                'utc': '1',
-                                                'time': '04:58:08'}},
-                          'machine': 'x86_64',
-                          'release': '3.11.3-201.fc19.x86_64'},
-                         'sysdata-version': '2.15'}}
-        actual_dict = sadf.etree_to_dict(tree)
-        #print actual_dict
-        #exit(0)
-        self.assertEquals(actual_dict, expected_dict)
-
-    def _etree_to_dict_empty_test(self):
-        out = """<?xml version="1.0" encoding="UTF-8"?>
-<sysstat>
-<buffers></buffers>
-<cached></cached>
-<commit>2127484</commit>
-<commit-percent>7.38</commit-percent>
-<active>361428</active>
-<inactive>487048</inactive>
-</sysstat>
-"""
-        tree = etree.fromstring(out)
-        expected_dict = \
-            {'sysstat': {'cached': None,
-                         'inactive': '487048',
-                         'commit-percent': '7.38',
-                         'active': '361428',
-                         'commit': '2127484',
-                         'buffers': None}}
-        actual_dict = sadf.etree_to_dict(tree)
-        self.assertEquals(actual_dict, expected_dict)
-
-    def test_etree_to_dict_test(self):
-        self._etree_to_dict_arg_test()
-        self._etree_to_dict_string_test()
-        self._etree_to_dict_empty_test()
+        self.assertRaises(plugins.sadf.SadfXmlErrorException, _getLatestStat)
