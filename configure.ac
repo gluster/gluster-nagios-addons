@@ -88,11 +88,14 @@ AX_PYTHON_MODULE([pthreading], [fatal])
 AX_PYTHON_MODULE([pyinotify], [fatal])
 AX_PYTHON_MODULE([selinux], [fatal])
 
+#PKG_CHECK_MODULES("libgfapi", libgfapi >= 3.4.0)
+
 # Keep sorted
 AC_CONFIG_FILES([
 	Makefile
 	gluster-nagios-addons.spec
 	plugins/Makefile
+	plugins/volcap/Makefile
 	tests/Makefile
 	tests/run_tests_local.sh
 	tests/run_tests.sh

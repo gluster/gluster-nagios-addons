@@ -1,3 +1,7 @@
+SUBDIRS = \
+	volcap \
+	$(NULL)
+
 cronddir = $(sysconfdir)/cron.d
 crond_DATA = \
 	gluster-sysstat.crontab \
@@ -5,6 +9,8 @@ crond_DATA = \
 
 dist_glusternagiosplugins_PYTHON = \
 	check_disk_and_inode.py \
+	check_vol_utilization.py \
+	check_vol_status.py \
 	cpu.py \
 	__init__.py \
 	memory.py \
