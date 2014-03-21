@@ -70,6 +70,7 @@ Requires:         python-ethtool
 Requires:         python-inotify
 Requires:         python-netaddr
 Requires:         python-pthreading
+Requires:         python-cpopen
 Requires:         sysstat
 
 %description
