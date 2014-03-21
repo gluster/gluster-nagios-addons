@@ -1,12 +1,12 @@
 
 dist_glusternagiosplugins_PYTHON = \
-	volcap.so \
+	capacity.so \
 	$(NULL)
 
-volcap.so: volCap.c setup.py
+capacity.so: volCap.c setup.py
 	(cd $(srcdir); $(PYTHON) setup.py build \
 		--build-temp $(abs_builddir) --build-lib $(abs_builddir))
-all-local: volcap.so
+all-local: capacity.so
 
 EXTRA_DIST = \
 	$(NULL)
@@ -19,4 +19,4 @@ EXTRA_DIST = \
 
 CLEANFILES = \
 	volcap.o \
-	volcap.so
+	capacity.so
