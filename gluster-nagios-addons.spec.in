@@ -64,6 +64,7 @@ Requires(post):   iptables
 %endif
 Requires:         gluster-nagios-common
 Requires:         libselinux-python
+Requires:         nagios-plugins-ide_smart
 Requires:         nrpe
 Requires:         python-argparse
 Requires:         python-ethtool
