@@ -1,0 +1,53 @@
+# nscautils.py --utility methods to interact with Nagios NSCA
+# Copyright (C) 2014 Red Hat Inc
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
+#
+
+import ConfigParser
+
+from glusternagios import utils
+
+__NAGIOSSERVER_CONF = "@nagiosconf@/nagios_server.conf"
+__NSCA_CONF_PATH = "@nagiosconf@/send_nsca.cfg"
+__NSCA_CMD_PATH = utils.CommandPath("nsca", "/usr/sbin/send_nsca")
+
+
+def getNagiosServerIP():
+    config = ConfigParser.ConfigParser()
+    config.read(__NAGIOSSERVER_CONF)
+    return config.get('NAGIOS-SERVER', 'nagios_server')
+
+
+def getNagiosClusterName():
+    config = ConfigParser.ConfigParser()
+    config.read(__NAGIOSSERVER_CONF)
+    return config.get('NAGIOS-DEFINTIONS', 'cluster_name')
+
+
+def send_to_nsca(hostName, serviceName, exitStatus, resultString):
+    cmddata = '%s\t%s\t%s\t%s' % (hostName,
+                                  serviceName,
+                                  exitStatus,
+                                  resultString)
+    nagiosIP = getNagiosServerIP()
+    command_send_nsca = [__NSCA_CMD_PATH, '-H', nagiosIP,
+                         '-c', __NSCA_CONF_PATH]
+    ret, out, err = utils.execCmd(command_send_nsca, data=cmddata)
+    return ret
+
+
+def vol_service_name(volName, statusType=None):
+    return "Volume Status %s - %s" % (statusType, volName)

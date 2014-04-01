@@ -20,6 +20,7 @@
 
 # keep sorted
 SUBDIRS = \
+	config \
 	plugins \
 	$(NULL)
 

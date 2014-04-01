@@ -1,0 +1,17 @@
+##### glusternagios.conf #####
+
+$ModLoad omprog
+$actionomprogbinary @glusternagiospluginsdir@/check_gluster_syslog.py
+
+#
+## Pass logs to omprog if app-name is 'gluster'
+#
+$template GLFS_NAG_Template,"%msgid%/%syslogfacility-text:::uppercase%/%syslogseverity-text:::uppercase%/%app-name:::uppercase% [%TIMESTAMP:::date-rfc3339%] %msg:::sp-if-no-1st-sp%%msg:::drop-last-lf%\n"
+
+if $app-name contains 'glusterfsd' then :omprog:;GLFS_NAG_Template
+
+
+#
+## discard logs where app-name is 'gluster' as we processed already
+#
+#if $app-name contains 'gluster' then ~

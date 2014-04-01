@@ -139,6 +139,7 @@ command[discoverlogicalcomponents]=/usr/lib64/nagios/plugins/gluster/discoverlog
 EOF
 %_init_enable nrpe
 %_init_restart crond
+%_init_restart rsyslog
 
 
 %preun
@@ -155,6 +156,8 @@ sed -i '/check_vol_quota_status/d' %{_sysconfdir}/nagios/nrpe.cfg
 %defattr(-,root,root,-)
 %attr(0755, -, -) %{_libdir}/nagios/plugins/gluster/*
 %{_sysconfdir}/cron.d/gluster-sysstat.crontab
+%{_sysconfdir}/rsyslog.d/glusternagios.conf
+%{_sysconfdir}/nagios/nagios_server.conf
 
 %files tests
 %defattr(-,root,root,-)

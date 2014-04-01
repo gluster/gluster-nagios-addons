@@ -53,6 +53,7 @@ AC_SUBST([nagiospluginsdir], ['${libdir}/nagios/plugins'])
 AC_SUBST([glusternagiospluginsdir], ['${nagiospluginsdir}/gluster'])
 AC_SUBST([glusternagioscommonpylibdir], ['${pyexecdir}/glusternagios'])
 AC_SUBST([glusternagiosaddonstestsdir], ['${datarootdir}/${PACKAGE_NAME}/tests'])
+AC_SUBST([nagiosconf], ['/etc/nagios'])
 
 # Checking for pyflakes
 AC_PATH_PROG([PYFLAKES], [pyflakes])
@@ -94,7 +95,10 @@ AX_PYTHON_MODULE([selinux], [fatal])
 AC_CONFIG_FILES([
 	Makefile
 	gluster-nagios-addons.spec
+	config/Makefile
+	config/glusternagios.conf
 	plugins/Makefile
+	plugins/nscautils.py
 	plugins/volcap/Makefile
 	tests/Makefile
 	tests/run_tests_local.sh

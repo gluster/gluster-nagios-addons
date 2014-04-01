@@ -1,9 +1,11 @@
 #!/usr/bin/python
+
 import re
-import commands
 import argparse
+import commands
 import xml.etree.ElementTree as ET
 from glusternagios import utils
+import nscautils
 
 
 def parseXml(xmldoc, searchStr):
@@ -23,37 +25,6 @@ def getVolumeStatus(vol_status_out):
         #print "Stopped"
         vol_status = "Stopped"
     return vol_status
-
-
-def getNagiosServerIP():
-    nagiosIP = ""
-    nscaConfig = open("/etc/nagios/nagios_server.cfg", "r+")
-    for line in nscaConfig.readlines():
-        if "nagios_server" in line:
-            #print line.rstrip()
-            line = line.rstrip()
-            nagiosIP = line.rpartition('=')[2]
-            #print nagiosIP
-    return nagiosIP
-
-
-def send_to_nsca(hostName, serviceName, exitStatus, resultString):
-    #print hostName
-    #print  serviceName
-    #print  exitStatus
-    #print resultString
-    f = open('out.txt', 'w')
-    print >> f, '%s\t%s\t%s\t%s' % (hostName,
-                                    serviceName,
-                                    exitStatus,
-                                    resultString)
-    f.close()
-    nagiosIP = getNagiosServerIP()
-    command_send_nsca = "send_nsca -H " + nagiosIP + \
-                        " -c /etc/nagios/send_nsca.cfg < out.txt"
-    #print command_send_nsca
-    commands.getoutput(command_send_nsca)
-    #print nsca_stat
 
 
 def showBrickStatus(vol_status_out):
@@ -83,7 +54,10 @@ def showBrickStatus(vol_status_out):
                 else:
                     exitStatus = utils.PluginStatusCode.CRITICAL
                     resultString = "Brick Status: CRITICAL"
-                send_to_nsca(brickIP, brickName, exitStatus, resultString)
+                nscautils.send_to_nsca(brickIP,
+                                       brickName,
+                                       exitStatus,
+                                       resultString)
 
 
 def showVolumeStatus(vol_status_out, volName, clusterName):
@@ -94,7 +68,7 @@ def showVolumeStatus(vol_status_out, volName, clusterName):
     #brick_list = []
     resultString = ""
     exitStatus = utils.PluginStatusCode.OK
-    serviceName = "Volume-%s-Status" % volName
+    serviceName = nscautils.vol_service_name(volName)
     ipPat = re.compile("^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$")
     vol_status = getVolumeStatus(vol_status_out)
     if vol_status == "Started":
@@ -132,7 +106,7 @@ def showVolumeStatus(vol_status_out, volName, clusterName):
                                                          brick_online)
         exitStatus = utils.PluginStatusCode.OK
 
-    send_to_nsca(clusterName, serviceName, exitStatus, resultString)
+    nscautils.send_to_nsca(clusterName, serviceName, exitStatus, resultString)
 
 
 def parse_input():
