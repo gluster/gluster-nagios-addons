@@ -65,6 +65,7 @@ Requires(post):   iptables
 Requires:         gluster-nagios-common
 Requires:         libselinux-python
 Requires:         nagios-plugins-ide_smart
+Requires:         nagios-plugins-procs
 Requires:         nrpe
 Requires:         nsca-client
 Requires:         python-argparse
@@ -73,6 +74,7 @@ Requires:         python-inotify
 Requires:         python-netaddr
 Requires:         python-pthreading
 Requires:         python-cpopen >= 1.3
+Requires:         python-psutil
 Requires:         sysstat
 
 %description
@@ -159,6 +161,7 @@ sed -i '/check_vol_quota_status/d' %{_sysconfdir}/nagios/nrpe.cfg
 %{_sysconfdir}/cron.d/gluster-sysstat.crontab
 %{_sysconfdir}/rsyslog.d/glusternagios.conf
 %{_sysconfdir}/nagios/nagios_server.conf
+%{_sysconfdir}/cron.d/gluster-proc.crontab
 
 %files tests
 %defattr(-,root,root,-)

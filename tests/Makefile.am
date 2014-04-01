@@ -21,8 +21,10 @@
 test_modules = \
 	test_check_gluster_syslog.py \
 	test_check_volume_status.py \
+	check_proc_test_data.py \
 	test_cpu.py \
 	test_cpu_dataFile.py \
+	test_gluster_proc.py \
 	test_memory.py \
 	test_memory_dataFile.py \
 	test_network.py \
