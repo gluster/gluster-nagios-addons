@@ -131,6 +131,9 @@ command[check_cpu_multicore]=%{_libdir}/nagios/plugins/gluster/cpu.py -w 80 -c 9
 command[check_interfaces]=%{_libdir}/nagios/plugins/gluster/network.py -e lo -e ';vdsmdummy;'
 command[check_brick_usage]=/usr/lib64/nagios/plugins/gluster/check_disk_and_inode.py -w 80 -c 90 -u MB -n -i \$ARG1\$
 command[check_vol_utilization]=sudo /usr/lib64/nagios/plugins/gluster/check_vol_utilization.py \$ARG1\$ -w \$ARG2\$ -c \$ARG3\$
+###Auto Discovery related
+command[discoverpeers]=/usr/lib64/nagios/plugins/gluster/discoverpeers.py
+command[discoverlogicalcomponents]=/usr/lib64/nagios/plugins/gluster/discoverlogicalcomponents.py
 EOF
 %_init_enable nrpe
 %_init_restart crond

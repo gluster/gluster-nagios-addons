@@ -12,6 +12,9 @@ dist_glusternagiosplugins_PYTHON = \
 	check_vol_utilization.py \
 	check_vol_status.py \
 	cpu.py \
+	discoverpeers.py \
+	discoverlogicalcomponents.py \
+	discoverhostparams.py \
 	__init__.py \
 	memory.py \
 	network.py \
