@@ -26,7 +26,6 @@ from glusternagios import utils
 def discoverhosts():
     xmlElemList = []
     nrpe_out_list = []
-    resltdict = {}
     resultstring = ""
 
     command_peer_status = utils.sudoCmdPath.cmd + " " \
@@ -36,6 +35,7 @@ def discoverhosts():
     xmlElemList = utils.parseXml(peer_status_out, "./peerStatus/peer")
     for peer in xmlElemList:
         if (peer.find('connected').text == "1"):
+            resltdict = {}
             resltdict['hostip'] = peer.find('hostname').text
             nrpe_out_list.append(resltdict)
     resultstring = json.dumps(nrpe_out_list)
