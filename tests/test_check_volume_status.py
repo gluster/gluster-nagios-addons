@@ -17,18 +17,20 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-import argparse
-
 import mock
 
 from testrunner import PluginsTestCase as TestCaseBase
 from plugins import check_volume_status
 from glusternagios import utils
+from glusternagios import glustercli
+
 
 class ArgParseMock(object):
-     def __init__(self, cluster, volume):
-         self.cluster = cluster
-         self.volume = volume
+    def __init__(self, cluster, volume, type="info"):
+        self.cluster = cluster
+        self.volume = volume
+        self.type = type
+
 
 class TestCheckVolumeStatus(TestCaseBase):
 
@@ -50,20 +52,27 @@ class TestCheckVolumeStatus(TestCaseBase):
                                          .getVolumeStatus(args))
         assert exitStatusCode == utils.PluginStatusCode.CRITICAL
 
+    @mock.patch('glusternagios.glustercli.volumeQuotaStatus')
+    def test_checkVolumeQuotaStatus(self, mock_volumeQuotaStatus):
+        mock_volumeQuotaStatus.return_value = glustercli.\
+            VolumeQuotaStatus.EXCEEDED
+        args = ArgParseMock('test-cluster', 'test-vol', 'quota')
+        exitStatusCode, exitStatusMsg = (check_volume_status
+                                         .getVolumeQuotaStatus(args))
+        assert exitStatusCode == utils.PluginStatusCode.WARNING
 
 
 def _getVolume():
     vol = {'test-vol': {'brickCount': 2,
-                      'bricks': ['server1:/path1', 'server2:/path2'],
-                      'options': {'option':'val'},
-                      'transportType': ['tcp'],
-                      'uuid': '0000-0000-0000-1111',
-                      'volumeName': 'test-vol',
-                      'volumeStatus': 'ONLINE',
-                      'volumeType': 'DISTRIBUTED'}}
+                        'bricks': ['server1:/path1', 'server2:/path2'],
+                        'options': {'option': 'val'},
+                        'transportType': ['tcp'],
+                        'uuid': '0000-0000-0000-1111',
+                        'volumeName': 'test-vol',
+                        'volumeStatus': 'ONLINE',
+                        'volumeType': 'DISTRIBUTED'}}
     return vol
 
 
 def _getEmptyVolume():
     return {}
-

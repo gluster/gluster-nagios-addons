@@ -19,6 +19,7 @@
 #
 
 test_modules = \
+	test_check_volume_status.py \
 	test_cpu.py \
 	test_cpu_dataFile.py \
 	test_memory.py \

@@ -39,23 +39,46 @@ def getVolumeStatus(args):
             exitstatus = utils.PluginStatusCode.CRITICAL
             message = "CRITICAL: Volume is stopped"
     except glustercli.GlusterCmdFailedException as e:
-        out = "UNKNOWN: Command execution failed"
-        return utils.PluginStatusCode.UNKNOWN,out
+        out = ("UNKNOWN: Command execution failed %s" % e.message)
+        return utils.PluginStatusCode.UNKNOWN, out
 
     return exitstatus, message
+
+
+def getVolumeQuotaStatus(args):
+    try:
+        status = glustercli.volumeQuotaStatus(args.volume)
+    except glustercli.GlusterCmdFailedException as e:
+        out = ("QUOTA: Quota status could not be determined %s" % e.message)
+        return utils.PluginStatusCode.UNKNOWN, out
+
+    if status == glustercli.VolumeQuotaStatus.EXCEEDED:
+        return utils.PluginStatusCode.WARNING, "QUOTA: limit exceeded"
+    elif status == glustercli.VolumeQuotaStatus.DISABLED:
+        return utils.PluginStatusCode.OK, "QUOTA: not enabled or configured"
+    else:
+        return utils.PluginStatusCode.OK, "QUOTA: OK"
+
 
 def parse_input():
     parser = argparse.ArgumentParser()
     parser.add_argument("-v", "--volume", action="store",
                         required=True,
-                        help="Name of the volume for which"
-                             " status is to be shown")
+                        help="Name of the volume for status")
+    parser.add_argument("-t", "--type", action="store",
+                        default="info",
+                        dest="type",
+                        help="Type of status to be shown. Possible values:",
+                        choices=["info", "quota"])
     args = parser.parse_args()
     return args
 
 
 if __name__ == '__main__':
     args = parse_input()
-    exitstatus, message = getVolumeStatus(args)
+    if args.type == "info":
+        exitstatus, message = getVolumeStatus(args)
+    if args.type == "quota":
+        exitstatus, message = getVolumeQuotaStatus(args)
     print message
     exit(exitstatus)

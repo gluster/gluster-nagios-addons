@@ -131,7 +131,8 @@ command[check_cpu_multicore]=%{_libdir}/nagios/plugins/gluster/cpu.py -w 80 -c 9
 command[check_interfaces]=%{_libdir}/nagios/plugins/gluster/network.py -e lo -e ';vdsmdummy;'
 command[check_brick_usage]=/usr/lib64/nagios/plugins/gluster/check_disk_and_inode.py -w 80 -c 90 -u MB -n -i \$ARG1\$
 command[check_vol_utilization]=sudo /usr/lib64/nagios/plugins/gluster/check_vol_utilization.py \$ARG1\$ -w \$ARG2\$ -c \$ARG3\$
-command[check_vol_status]=sudo /usr/lib64/nagios/plugins/gluster/check_volume_status.py -v \$ARG1\$
+command[check_vol_status]=sudo /usr/lib64/nagios/plugins/gluster/check_volume_status.py -v \$ARG1\$ -t info
+command[check_vol_quota_status]=sudo /usr/lib64/nagios/plugins/gluster/check_volume_status.py -v \$ARG1\$ -t quota
 ###Auto Discovery related
 command[discoverpeers]=/usr/lib64/nagios/plugins/gluster/discoverpeers.py
 command[discoverlogicalcomponents]=/usr/lib64/nagios/plugins/gluster/discoverlogicalcomponents.py
@@ -147,6 +148,8 @@ sed -i '/check_memory/d' %{_sysconfdir}/nagios/nrpe.cfg
 sed -i '/check_swap_usage/d' %{_sysconfdir}/nagios/nrpe.cfg
 sed -i '/sadf.py/d' %{_sysconfdir}/nagios/nrpe.cfg
 sed -i '/check_cpu_multicore.py/d' %{_sysconfdir}/nagios/nrpe.cfg
+sed -i '/check_vol_status/d' %{_sysconfdir}/nagios/nrpe.cfg
+sed -i '/check_vol_quota_status/d' %{_sysconfdir}/nagios/nrpe.cfg
 
 %files
 %defattr(-,root,root,-)
