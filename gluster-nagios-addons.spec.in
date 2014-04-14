@@ -139,6 +139,7 @@ command[check_vol_quota_status]=sudo /usr/lib64/nagios/plugins/gluster/check_vol
 ###Auto Discovery related
 command[discoverpeers]=%{_libdir}/nagios/plugins/gluster/discoverpeers.py
 command[discoverlogicalcomponents]=sudo %{_libdir}/nagios/plugins/gluster/discoverlogicalcomponents.py
+command[discoverhostparams]=%{_libdir}/nagios/plugins/gluster/discoverhostparams.py
 EOF
 %_init_enable nrpe
 %_init_restart crond
