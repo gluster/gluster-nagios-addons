@@ -71,7 +71,7 @@ Requires:         python-ethtool
 Requires:         python-inotify
 Requires:         python-netaddr
 Requires:         python-pthreading
-Requires:         python-cpopen
+Requires:         python-cpopen >= 1.3
 Requires:         sysstat
 
 %description
