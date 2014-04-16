@@ -44,10 +44,10 @@ def getNagiosClusterName():
 
 
 def send_to_nsca(hostName, serviceName, exitStatus, resultString):
-    cmddata = '%s\t%s\t%s\t%s' % (hostName,
-                                  serviceName,
-                                  exitStatus,
-                                  resultString)
+    cmddata = '%s\t%s\t%s\t%s\n' % (hostName,
+                                    serviceName,
+                                    exitStatus,
+                                    resultString)
     nagiosIP = getNagiosServerIP()
     command_send_nsca = [__NSCA_CMD_PATH.cmd, '-H', nagiosIP,
                          '-c', __NSCA_CONF_PATH]
