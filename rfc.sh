@@ -112,7 +112,7 @@ add_hook_commit_msg()
 
 assert_python_check()
 {
-    pyfiles=$(git diff --name-only origin/$branch..HEAD 2>/dev/null | grep -e '\.py$' -e '\.py\.in$')
+    pyfiles=$(git diff --diff-filter=ACMRT --name-only origin/$branch..HEAD 2>/dev/null | grep -e '\.py$' -e '\.py\.in$')
     if [ -z "$pyfiles" ]; then
         return
     fi

@@ -16,71 +16,122 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 #
 
-import sadf
+import sys
 import argparse
+import ethtool
+import logging
+
+import sadf
 from glusternagios import utils
 
+_description = "Network plugin for Nagios provides status and performance " \
+               "data of network interfaces.  By default, it provides " \
+               "details of all the interfaces having IP addresses"
 _sadfNetCommand = ["sadf", "-x", "--", "-n", "DEV"]
+_defaultExcludeList = ['lo']
 
 
-def parse_input():
-    parser = argparse.ArgumentParser()
+class InterfaceStatus:
+    UP = 'UP'
+    DOWN = 'DOWN'
+
+
+def parse_cmdargs():
+    parser = argparse.ArgumentParser(description=_description)
+    sadf.add_common_args(parser)
+
     group = parser.add_mutually_exclusive_group()
     group.add_argument("-e", "--exclude", action="append",
-                       help="Parameters to be excluded")
+                       help="exclude given interface")
     group.add_argument("-i", "--include", action="append",
-                       help="Parameters to be included")
-    sadf.add_common_args(parser)
+                       help="add given interface for monitoring")
+    group.add_argument("-a", "--all", action="store_true", default=False,
+                       help="get status of all interfaces")
+
     args = parser.parse_args()
     return args
 
 
-def showNetStat(s, iface_list=None, list_type=None):
-    pl_op = {}
-    if not s:
-        pl_op["message"] = ("IFACE UNKNOWN")
-        pl_op['exit_status'] = utils.PluginStatusCode.UNKNOWN
-        return pl_op
+def _getNetworkInterfaces(interfaces=()):
+    if interfaces:
+        devices = interfaces
+    else:
+        devices = ethtool.get_active_devices()
+
+    info = {}
+    for dev in devices:
+        try:
+            info[dev] = {'ipaddr': ethtool.get_ipaddr(dev),
+                         'flags': ethtool.get_flags(dev)}
+        except IOError as e:
+            logging.error("unable to get ipaddr/flags for %s: %s" % (dev, e))
+            info[dev] = {'ipaddr': None,
+                         'flags': None}
+
+    return info
+
+
+def _getStatMessage(stat, all=False, includes=(), excludes=()):
+    excludeList = _defaultExcludeList
+    if excludes:
+        excludeList += excludes
+
+    rc = utils.PluginStatus.OK
+    interfaces = _getNetworkInterfaces()
     devNames = []
     perfLines = []
-    try:
-        for dev in s['network']['net-dev']:
-            if list_type == "exclude":
-                if dev['iface'] in iface_list:
-                    continue
-            elif list_type == "include":
-                if dev['iface'] not in iface_list:
-                    continue
-            devNames.append(dev['iface'])
-            perfLines.append("%s.rxpck=%s %s.txpck=%s %s.rxkB=%s %s.txkB=%s"
-                             % (dev['iface'], dev['rxpck'],
-                                dev['iface'], dev['txpck'],
-                                dev['iface'], dev['rxkB'],
-                                dev['iface'], dev['txkB']))
-    except (KeyError, ValueError, TypeError) as e:
-        pl_op["message"] = "key: %s not found" % str(e)
-        pl_op["exit_status"] = utils.PluginStatusCode.UNKNOWN
-        return pl_op
 
-    pl_op["message"] = ("IFACE OK: %s |%s" % (", ".join(devNames),
-                                              " ".join(perfLines)))
-    pl_op['exit_status'] = utils.PluginStatusCode.OK
-    return pl_op
+    for info in stat['network']['net-dev']:
+        ipaddr = interfaces.get(info['iface'], {}).get('ipaddr')
+        flags = interfaces.get(info['iface'], {}).get('flags')
+        if flags and (flags & ethtool.IFF_UP):
+            status = InterfaceStatus.UP
+        else:
+            status = InterfaceStatus.DOWN
+
+        if includes:
+            if info['iface'] not in includes:
+                continue
+        elif not all:
+            if not ipaddr:
+                continue
+            elif info['iface'] in excludeList:
+                continue
+
+        if includes and (status == InterfaceStatus.DOWN):
+            rc = utils.PluginStatus.WARNING
+
+        devNames.append("%s:%s" % (info['iface'], status))
+        perfLines.append("%s.rxpck=%s %s.txpck=%s %s.rxkB=%s %s.txkB=%s"
+                         % (info['iface'], info['rxpck'],
+                            info['iface'], info['txpck'],
+                            info['iface'], info['rxkB'],
+                            info['iface'], info['txkB']))
+
+    return (getattr(utils.PluginStatusCode, rc),
+            "%s: %s |%s" % (rc,
+                            ",".join(devNames),
+                            " ".join(perfLines)))
+
+
+def main():
+    args = parse_cmdargs()
+
+    try:
+        stat = sadf.getLatestStat(sadf.sadfExecCmd(_sadfNetCommand),
+                                  args.interval)
+        (rc, msg) = _getStatMessage(stat, all=args.all,
+                                    includes=args.include,
+                                    excludes=args.exclude)
+        print msg
+        sys.exit(rc)
+    except (sadf.SadfCmdExecFailedException,
+            sadf.SadfXmlErrorException,
+            KeyError) as e:
+        logging.error("unable to get network status: %s" % e)
+        print "UNKNOWN"
+        sys.exit(utils.PluginStatusCode.UNKNOWN)
+
 
 if __name__ == '__main__':
-    args = parse_input()
-    try:
-        st = sadf.getLatestStat(sadf.sadfExecCmd(_sadfNetCommand),
-                                args.interval if args.interval else 1)
-    except (sadf.SadfCmdExecFailedException,
-            sadf.SadfXmlErrorException) as e:
-        print str(e)
-        exit(utils.PluginStatusCode.UNKNOWN)
-    if args.exclude:
-        d = showNetStat(st, args.exclude, "exclude")
-    elif args.include:
-        d = showNetStat(st, args.include, "include")
-    else:
-        d = showNetStat(st)
-    print d["message"]
-    exit(d['exit_status'])
+    main()

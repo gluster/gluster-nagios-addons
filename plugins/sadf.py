@@ -98,5 +98,6 @@ def getLatestStat(root, interval=1):
 def add_common_args(parser):
     parser.add_argument("-t", "--interval", action="store",
                         type=int,
+                        default=1,
                         help="Interval of time(min) older than"
                         " which sadf output in considered stale")
