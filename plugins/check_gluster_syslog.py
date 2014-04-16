@@ -62,9 +62,6 @@ def processMsg(msg):
     'Check if msg is indeed from gluster app'
     custom_logvars = msg[:msg.find(' ')]
     level = custom_logvars.split('/')[2]
-    appname = custom_logvars.split('/')[3]
-    if appname != 'GLUSTERFSD':
-        return
     # For gluster messages, need to check the source of message
     logsource = msg[msg.rfind('['):msg.rfind(']')]
     if logsource.find('quota') > -1:

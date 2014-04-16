@@ -50,7 +50,7 @@ AC_SUBST([NAGIOSGROUP], [nagios])
 
 # default paths
 AC_SUBST([nagiospluginsdir], ['${libdir}/nagios/plugins'])
-AC_SUBST([glusternagiospluginsdir], ['${nagiospluginsdir}/gluster'])
+AC_SUBST([glusternagiospluginsdir], ['/usr/lib64/nagios/plugins/gluster'])
 AC_SUBST([glusternagioscommonpylibdir], ['${pyexecdir}/glusternagios'])
 AC_SUBST([glusternagiosaddonstestsdir], ['${datarootdir}/${PACKAGE_NAME}/tests'])
 AC_SUBST([nagiosconf], ['/etc/nagios'])

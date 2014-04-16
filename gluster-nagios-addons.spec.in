@@ -66,6 +66,7 @@ Requires:         gluster-nagios-common
 Requires:         libselinux-python
 Requires:         nagios-plugins-ide_smart
 Requires:         nrpe
+Requires:         nsca-client
 Requires:         python-argparse
 Requires:         python-ethtool
 Requires:         python-inotify

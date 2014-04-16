@@ -43,7 +43,7 @@ def send_to_nsca(hostName, serviceName, exitStatus, resultString):
                                   exitStatus,
                                   resultString)
     nagiosIP = getNagiosServerIP()
-    command_send_nsca = [__NSCA_CMD_PATH, '-H', nagiosIP,
+    command_send_nsca = [__NSCA_CMD_PATH.cmd, '-H', nagiosIP,
                          '-c', __NSCA_CONF_PATH]
     ret, out, err = utils.execCmd(command_send_nsca, data=cmddata)
     return ret
