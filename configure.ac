@@ -99,7 +99,6 @@ AC_CONFIG_FILES([
 	config/glusternagios.conf
 	plugins/Makefile
 	plugins/nscautils.py
-	plugins/gluster-proc.crontab
 	plugins/volcap/Makefile
 	tests/Makefile
 	tests/run_tests_local.sh
