@@ -19,10 +19,8 @@
 #
 
 from testrunner import PluginsTestCase as TestCaseBase
-from plugins import check_proc_status as gProc
 from plugins import nscautils
 from glusternagios import utils
-import check_proc_test_data as gData
 
 
 class TestProc(TestCaseBase):
@@ -38,5 +36,3 @@ class TestProc(TestCaseBase):
     def test_Nfs(self):
         nscautils.send_to_nsca = self._maskSendToNsca
         utils.execCmd = self._maskGetoutputCritical
-
-        assert(gProc.sendNfsStatus("10.70.43.33", gData.nfsEnabled1) == None)
