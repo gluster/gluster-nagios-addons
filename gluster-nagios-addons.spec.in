@@ -135,8 +135,8 @@ command[check_vol_utilization]=sudo /usr/lib64/nagios/plugins/gluster/check_vol_
 command[check_vol_status]=sudo /usr/lib64/nagios/plugins/gluster/check_volume_status.py -v \$ARG1\$ -t info
 command[check_vol_quota_status]=sudo /usr/lib64/nagios/plugins/gluster/check_volume_status.py -v \$ARG1\$ -t quota
 ###Auto Discovery related
-command[discoverpeers]=/usr/lib64/nagios/plugins/gluster/discoverpeers.py
-command[discoverlogicalcomponents]=/usr/lib64/nagios/plugins/gluster/discoverlogicalcomponents.py
+command[discoverpeers]=%{_libdir}/nagios/plugins/gluster/discoverpeers.py
+command[discoverlogicalcomponents]=sudo %{_libdir}/nagios/plugins/gluster/discoverlogicalcomponents.py
 EOF
 %_init_enable nrpe
 %_init_restart crond

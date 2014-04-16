@@ -17,51 +17,29 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 #
-import commands
 import json
 import sys
 
 from glusternagios import utils
-
-
-def discoverbricks(vol_info_out):
-    bricklist = []
-    xmlElemList = utils.parseXml(vol_info_out,
-                                 "./volInfo/volumes/volume/bricks/brick")
-    for brick in xmlElemList:
-        brickdict = {}
-        brickstr = brick.text
-        brickproplist = brickstr.split(':')
-        brickdict['hostip'] = brickproplist[0]
-        brickdict['brickpath'] = brickproplist[1]
-        bricklist.append(brickdict)
-
-    return bricklist
-
-
-def discovervolumes(vol_info_out):
-    vollist = []
-
-    #Get the volume info
-    xmlElemList = utils.parseXml(vol_info_out, "./volInfo/volumes/volume")
-    for volume in xmlElemList:
-        voldict = {}
-        voldict['name'] = volume.find('name').text
-        voldict['typeStr'] = volume.find('typeStr').text
-        vollist.append(voldict)
-
-    return vollist
+from glusternagios import glustercli
 
 
 def discoverlogicalelements():
     resultlist = {}
-    resultstring = ""
-    command_vol_info = utils.sudoCmdPath.cmd + " " + \
-        utils.glusterCmdPath.cmd + " volume info --xml"
-    vol_info_out = commands.getoutput(command_vol_info)
-    resultlist['volumes'] = discovervolumes(vol_info_out)
-    resultlist['bricks'] = discoverbricks(vol_info_out)
-    #convert to string
+    resultlist['volumes'] = []
+
+    volumes = glustercli.volumeInfo()
+    for volume in volumes.values():
+        volDict = {}
+        volDict['name'] = volume['volumeName']
+        volDict['type'] = volume['volumeType']
+        volDict['bricks'] = []
+        for brickstr in volume['bricks']:
+            brickproplist = brickstr.split(':')
+            volDict['bricks'].append({'hostip': brickproplist[0],
+                                      'brickpath': brickproplist[1]})
+        resultlist['volumes'].append(volDict)
+
     resultstring = json.dumps(resultlist)
     print resultstring
     sys.exit(utils.PluginStatusCode.OK)
