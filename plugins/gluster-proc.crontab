@@ -1,1 +1,1 @@
-*/1 * * * * root /usr/lib64/nagios/gluster/plugins/check_proc_status.py
+*/1 * * * * root /usr/lib64/nagios/plugins/gluster/check_proc_status.py

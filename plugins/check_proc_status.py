@@ -166,9 +166,9 @@ def sendShdStatus(hostName, volInfo):
 
 
 if __name__ == '__main__':
-    #Get the volume status
-    #status = 0
-    hostName = socket.getfqdn()
+    hostName = nscautils.getCurrentHostNameInNagiosServer()
+    if not hostName:
+        hostName = socket.getfqdn()
     if hostName == "localhost.localdomain" or hostName == "localhost":
         sys.stderr.write("failed to find localhost fqdn")
 

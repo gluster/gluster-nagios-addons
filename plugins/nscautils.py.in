@@ -31,6 +31,12 @@ def getNagiosServerIP():
     return config.get('NAGIOS-SERVER', 'nagios_server')
 
 
+def getCurrentHostNameInNagiosServer():
+    config = ConfigParser.ConfigParser()
+    config.read(__NAGIOSSERVER_CONF)
+    return config.get('HOST-NAME', 'hostname_in_nagios')
+
+
 def getNagiosClusterName():
     config = ConfigParser.ConfigParser()
     config.read(__NAGIOSSERVER_CONF)
