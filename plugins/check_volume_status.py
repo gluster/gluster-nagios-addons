@@ -17,6 +17,8 @@
 #
 
 import argparse
+import json
+
 from glusternagios import utils
 from glusternagios import glustercli
 
@@ -32,8 +34,11 @@ def getVolumeStatus(args):
             return exitstatus, message
         elif volumes[args.volume]["volumeStatus"] == (glustercli.
                                                       VolumeStatus.ONLINE):
+            ret_volumes = {}
+            ret_volumes[args.volume] = volumes.get(args.volume)
+            ret_volumes[args.volume]['options'] = {}
             exitstatus = utils.PluginStatusCode.OK
-            message = "OK: Volume is up"
+            message = ("OK: Volume is up \n%s" % json.dumps(ret_volumes))
         elif volumes[args.volume]["volumeStatus"] == (glustercli.
                                                       VolumeStatus.OFFLINE):
             exitstatus = utils.PluginStatusCode.CRITICAL
