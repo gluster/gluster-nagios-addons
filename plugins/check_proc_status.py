@@ -89,8 +89,10 @@ def sendNfsStatus(hostName, volInfo):
 
     # if nfs is not running and any of the volume uses nfs
     # then its required to alert the user
-    for k, v in volInfo.iteritems():
-        nfsStatus = v.get('options', {}).get('nfs.disable', 'off')
+    for volume, volumeInfo in volInfo.iteritems():
+        if volumeInfo['volumeStatus'] == glustercli.VolumeStatus.OFFLINE:
+            continue
+        nfsStatus = volumeInfo.get('options', {}).get('nfs.disable', 'off')
         if nfsStatus == 'off':
             msg = "CRITICAL: Process glusterfs-nfs is not running"
             status = utils.PluginStatusCode.CRITICAL
@@ -153,16 +155,22 @@ def sendShdStatus(hostName, volInfo):
     for volumeName, volumeInfo in volInfo.iteritems():
         if volumeInfo['volumeStatus'] == glustercli.VolumeStatus.OFFLINE:
             continue
-        for brick in volumeInfo['bricksInfo']:
-            if brick['hostUuid'] == hostUuid and \
-               int(volumeInfo['replicaCount']) > 1:
-                status = utils.PluginStatusCode.CRITICAL
-                msg = "CRITICAL: Gluster Self Heal Daemon not running"
-                break
+        if hasBricks(hostUuid, volumeInfo['bricksInfo']) and \
+           int(volumeInfo['replicaCount']) > 1:
+            status = utils.PluginStatusCode.CRITICAL
+            msg = "CRITICAL: Gluster Self Heal Daemon not running"
+            break
     else:
         msg = "OK: Process Gluster Self Heal Daemon"
         status = utils.PluginStatusCode.OK
     nscautils.send_to_nsca(hostName, _shdService, status, msg)
+
+
+def hasBricks(hostUuid, bricks):
+    for brick in bricks:
+        if brick['hostUuid'] == hostUuid:
+            return True
+    return False
 
 
 if __name__ == '__main__':
