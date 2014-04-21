@@ -54,7 +54,8 @@ def getVolumeQuotaStatus(args):
     try:
         status = glustercli.volumeQuotaStatus(args.volume)
     except glustercli.GlusterCmdFailedException as e:
-        out = ("QUOTA: Quota status could not be determined %s" % e.message)
+        out = ("QUOTA: Quota status could not be determined %s"
+               % '.'.join(e.err))
         return utils.PluginStatusCode.UNKNOWN, out
 
     if status == glustercli.VolumeQuotaStatus.EXCEEDED:
@@ -65,6 +66,33 @@ def getVolumeQuotaStatus(args):
         return utils.PluginStatusCode.OK, "QUOTA: OK"
 
 
+def getVolumeSelfHealStatus(args):
+    try:
+        volume = glustercli.volumeHealSplitBrainStatus(args.volume)
+    except glustercli.GlusterCmdFailedException as e:
+        out = ("Self heal status could not be determined - %s"
+               % '.'.join(e.err))
+        return utils.PluginStatusCode.WARNING, out
+
+    if volume.get(args.volume) is None:
+        exitstatus = utils.PluginStatusCode.UNKNOWN
+        message = "UNKNOWN: Volume self heal info not found"
+    else:
+        if (volume[args.volume]['status'] == glustercli.
+                VolumeSplitBrainStatus.NOTAPPLICABLE):
+            exitstatus = utils.PluginStatusCode.OK
+            message = "Volume is not of replicate type"
+        elif (volume[args.volume]['status'] == glustercli.
+                VolumeSplitBrainStatus.OK):
+            exitstatus = utils.PluginStatusCode.OK
+            message = "No unsynced entries present"
+        elif (volume[args.volume]['status'] == glustercli.
+                VolumeSplitBrainStatus.SPLITBRAIN):
+            exitstatus = utils.PluginStatusCode.CRITICAL
+            message = ("Unsynced entries present %s"
+                       % (volume[args.volume]['unsyncedentries']))
+    return exitstatus, message
+
 def parse_input():
     parser = argparse.ArgumentParser()
     parser.add_argument("-v", "--volume", action="store",
@@ -74,7 +102,7 @@ def parse_input():
                         default="info",
                         dest="type",
                         help="Type of status to be shown. Possible values:",
-                        choices=["info", "quota"])
+                        choices=["info", "quota", "self-heal"])
     args = parser.parse_args()
     return args
 
@@ -85,5 +113,7 @@ if __name__ == '__main__':
         exitstatus, message = getVolumeStatus(args)
     if args.type == "quota":
         exitstatus, message = getVolumeQuotaStatus(args)
+    if args.type == "self-heal":
+        exitstatus, message = getVolumeSelfHealStatus(args)
     print message
     exit(exitstatus)
