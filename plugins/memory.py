@@ -45,7 +45,9 @@ def showMemStat(warning, critical, s):
         pl_op['exit_status'] = utils.PluginStatusCode.UNKNOWN
         return pl_op
     try:
-        totalMem = int(s['memory']['memfree']) + int(s['memory']['memused'])
+        totalMem = utils.convertSize((int(s['memory']['memfree'])
+                                      + int(s['memory']['memused'])),
+                                     "KB", "GB")
     except (KeyError, ValueError) as e:
         pl_op["message"] = "key: %s not found" % str(e)
         pl_op["exit_status"] = utils.PluginStatusCode.UNKNOWN
@@ -53,30 +55,36 @@ def showMemStat(warning, critical, s):
 
     crit_value = (totalMem * critical) / 100
     war_value = (totalMem * warning) / 100
-    if int(s['memory']['memused']) >= crit_value:
+    if utils.convertSize(int(s['memory']['memused']),
+                         "KB", "GB") >= crit_value:
         pl_op["message"] = utils.PluginStatus.CRITICAL
         pl_op['exit_status'] = utils.PluginStatusCode.CRITICAL
-    elif int(s['memory']['memused']) >= war_value:
+    elif utils.convertSize(int(s['memory']['memused']),
+                           "KB", "GB") >= war_value:
         pl_op["message"] = utils.PluginStatus.WARNING
         pl_op['exit_status'] = utils.PluginStatusCode.WARNING
     else:
         pl_op["message"] = utils.PluginStatus.OK
         pl_op['exit_status'] = utils.PluginStatusCode.OK
     try:
-        pl_op["message"] += ("- %.2f%% used(%skB out of %skB)|"
-                             "Total=%skB;%s;%s;0;%s"
-                             " Used=%skB Buffered=%skB"
-                             " Cached=%skB" % (
+        pl_op["message"] += ("- %.2f%% used(%.2fGB out of %.2fGB)|"
+                             "Total=%.2fGB;%.2f;%.2f;0;%.2f"
+                             " Used=%.2fGB Buffered=%.2fGB"
+                             " Cached=%.2fGB" % (
                                  float(s['memory']['memused-percent']),
-                                 s['memory']['memused'],
+                                 utils.convertSize(int(s['memory']['memused']),
+                                                   "KB", "GB"),
                                  totalMem,
                                  totalMem,
                                  war_value,
                                  crit_value,
                                  totalMem,
-                                 s['memory']['memused'],
-                                 s['memory']['buffers'],
-                                 s['memory']['cached']))
+                                 utils.convertSize(int(s['memory']['memused']),
+                                                   "KB", "GB"),
+                                 utils.convertSize(int(s['memory']['buffers']),
+                                                   "KB", "GB"),
+                                 utils.convertSize(int(s['memory']['cached']),
+                                                   "KB", "GB")))
     except (KeyError, ValueError, TypeError) as e:
         pl_op["message"] = "key: %s not found" % str(e)
         pl_op["exit_status"] = utils.PluginStatusCode.UNKNOWN

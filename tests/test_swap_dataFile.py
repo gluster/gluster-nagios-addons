@@ -33,8 +33,8 @@ SHOW_SWAP_STATUS_OK_IP = \
          'unit': 'kB'}}
 
 SHOW_SWAP_STATUS_OK_OP = \
-    {'message': "OK- 0.00% used(0kB out of 20971516kB)|"
-     "Used=0kB;10485758;16777212;0;20971516", 'exit_status': 0}
+    {'message': "OK- 0.00% used(0.00GB out of 20.00GB)|"
+     "Used=0.00GB;10.00;16.00;0;20.00", 'exit_status': 0}
 
 SHOW_SWAP_STATUS_WARNING_IP = \
     {'date': '2014-03-10',
@@ -47,9 +47,9 @@ SHOW_SWAP_STATUS_WARNING_IP = \
       'unit': 'kB'}}
 
 SHOW_SWAP_STATUS_WARNING_OP = \
-    {'message': "WARNING- 50.00% used(10485758kB"
-     " out of 20971516kB)|Used=10485758kB;8388606;"
-     "12582909;0;20971516", 'exit_status': 1}
+    {'message': "WARNING- 50.00% used(10.00GB out "
+     "of 20.00GB)|Used=10.00GB;8.00;12.00;0;20.00",
+     'exit_status': 1}
 
 SHOW_SWAP_STATUS_CRITICAL_IP = \
     {'date': '2014-03-10',
@@ -62,9 +62,9 @@ SHOW_SWAP_STATUS_CRITICAL_IP = \
       'unit': 'kB'}}
 
 SHOW_SWAP_STATUS_CRITICAL_OP = \
-    {'message': "CRITICAL- 50.00% used(10485758kB out"
-     " of 20971516kB)|Used=10485758kB;6291454;8388606"
-     ";0;20971516", 'exit_status': 2}
+    {'message': "CRITICAL- 50.00% used(10.00GB out "
+     "of 20.00GB)|Used=10.00GB;6.00;8.00;0;20.00",
+     'exit_status': 2}
 
 SHOW_SWAP_STATUS_EXCEPTION_IP = \
     {'date': '2014-03-10',

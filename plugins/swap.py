@@ -44,7 +44,9 @@ def showSwapStat(warning, critical, s):
         pl_op['exit_status'] = utils.PluginStatusCode.UNKNOWN
         return pl_op
     try:
-        totalSwap = int(s['memory']['swpfree']) + int(s['memory']['swpused'])
+        totalSwap = utils.convertSize((int(s['memory']['swpfree'])
+                                       + int(s['memory']['swpused'])),
+                                      "KB", "GB")
     except (KeyError, ValueError, TypeError) as e:
         pl_op["message"] = "key: %s not found" % str(e)
         pl_op["exit_status"] = utils.PluginStatusCode.UNKNOWN
@@ -52,22 +54,26 @@ def showSwapStat(warning, critical, s):
 
     crit_value = (totalSwap * critical) / 100
     war_value = (totalSwap * warning) / 100
-    if int(s['memory']['swpused']) >= crit_value:
+    if utils.convertSize(int(s['memory']['swpused']),
+                         "KB", "GB") >= crit_value:
         pl_op["message"] = utils.PluginStatus.CRITICAL
         pl_op['exit_status'] = utils.PluginStatusCode.CRITICAL
-    elif int(s['memory']['swpused']) >= war_value:
+    elif utils.convertSize(int(s['memory']['swpused']),
+                           "KB", "GB") >= war_value:
         pl_op["message"] = utils.PluginStatus.WARNING
         pl_op['exit_status'] = utils.PluginStatusCode.WARNING
     else:
         pl_op["message"] = utils.PluginStatus.OK
         pl_op['exit_status'] = utils.PluginStatusCode.OK
     try:
-        pl_op["message"] += ("- %.2f%% used(%skB out of %skB)|Used=%skB;%s;"
-                             "%s;0;%s" % (
+        pl_op["message"] += ("- %.2f%% used(%.2fGB out of %.2fGB)|Used=%.2fGB;"
+                             "%.2f;%.2f;0;%.2f" % (
                                  float(s['memory']['swpused-percent']),
-                                 s['memory']['swpused'],
+                                 utils.convertSize(int(s['memory']['swpused']),
+                                                   "KB", "GB"),
                                  totalSwap,
-                                 s['memory']['swpused'],
+                                 utils.convertSize(int(s['memory']['swpused']),
+                                                   "KB", "GB"),
                                  war_value,
                                  crit_value,
                                  totalSwap))

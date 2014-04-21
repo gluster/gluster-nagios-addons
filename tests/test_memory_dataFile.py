@@ -35,9 +35,9 @@ SHOW_MEMORY_STATUS_OK_IP = \
                 'buffers': '376704', 'dirty': '1696'}}
 
 SHOW_MEMORY_STATUS_OK_OP = \
-    {'message': "OK- 46.97% used(3696340kB out of 7870384kB)|"
-     "Total=7870384kB;4722230;5509268;0;7870384 Used=3696340kB"
-     " Buffered=376704kB Cached=1519240kB", 'exit_status': 0}
+    {'message': "OK- 46.97% used(3.53GB out of 7.51GB)|"
+     "Total=7.51GB;4.50;5.25;0;7.51 Used=3.53GB "
+     "Buffered=0.36GB Cached=1.45GB", 'exit_status': 0}
 
 SHOW_MEMORY_STATUS_WARNING_IP = \
     {'date': '2014-03-10', 'utc': '1',
@@ -52,9 +52,9 @@ SHOW_MEMORY_STATUS_WARNING_IP = \
                 'buffers': '376704', 'dirty': '1696'}}
 
 SHOW_MEMORY_STATUS_WARNING_OP = \
-    {'message': "WARNING- 46.97% used(3696340kB out of 7870384"
-     "kB)|Total=7870384kB;3148153;4722230;0;7870384 Used=36963"
-     "40kB Buffered=376704kB Cached=1519240kB", 'exit_status': 1}
+    {'message': "WARNING- 46.97% used(3.53GB out of 7.51GB)"
+     "|Total=7.51GB;3.00;4.50;0;7.51 Used=3.53GB"
+     " Buffered=0.36GB Cached=1.45GB", 'exit_status': 1}
 
 SHOW_MEMORY_STATUS_CRITICAL_IP = \
     {'date': '2014-03-10', 'utc': '1',
@@ -69,9 +69,9 @@ SHOW_MEMORY_STATUS_CRITICAL_IP = \
                 'buffers': '376704', 'dirty': '1696'}}
 
 SHOW_MEMORY_STATUS_CRITICAL_OP = \
-    {'message': "CRITICAL- 46.97% used(3696340kB out of 7870384"
-     "kB)|Total=7870384kB;2361115;3148153;0;7870384 Used=369634"
-     "0kB Buffered=376704kB Cached=1519240kB", 'exit_status': 2}
+    {'message': "CRITICAL- 46.97% used(3.53GB out of 7.51GB)|"
+     "Total=7.51GB;2.25;3.00;0;7.51 Used=3.53GB "
+     "Buffered=0.36GB Cached=1.45GB", 'exit_status': 2}
 
 SHOW_MEMORY_STATUS_EXCEPTION_IP = \
     {'date': '2014-03-10', 'utc': '1',
