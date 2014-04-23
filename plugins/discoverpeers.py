@@ -16,29 +16,24 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
-import commands
 import sys
 import json
 
 from glusternagios import utils
+from glusternagios import glustercli
+from glusternagios.glustercli import HostStatus
 
 
 def discoverhosts():
-    xmlElemList = []
-    nrpe_out_list = []
-    resultstring = ""
-
-    command_peer_status = utils.sudoCmdPath.cmd + " " \
-        + utils.glusterCmdPath.cmd + " peer status --xml"
-    peer_status_out = commands.getoutput(command_peer_status)
-
-    xmlElemList = utils.parseXml(peer_status_out, "./peerStatus/peer")
-    for peer in xmlElemList:
-        if (peer.find('connected').text == "1"):
-            resltdict = {}
-            resltdict['hostip'] = peer.find('hostname').text
-            nrpe_out_list.append(resltdict)
-    resultstring = json.dumps(nrpe_out_list)
+    resultlist = []
+    peers = glustercli.peerStatus()
+    for peer in peers:
+        if peer['status'] == HostStatus.CONNECTED:
+            peerDict = {}
+            peerDict['hostip'] = peer['hostname']
+            peerDict['uuid'] = peer['uuid']
+            resultlist.append(peerDict)
+    resultstring = json.dumps(resultlist)
     print resultstring
     sys.exit(utils.PluginStatusCode.OK)
 

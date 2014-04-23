@@ -34,10 +34,11 @@ def discoverlogicalelements():
         volDict['name'] = volume['volumeName']
         volDict['type'] = volume['volumeType']
         volDict['bricks'] = []
-        for brickstr in volume['bricks']:
-            brickproplist = brickstr.split(':')
+        for brick in volume['bricksInfo']:
+            brickproplist = brick['name'].split(':')
             volDict['bricks'].append({'hostip': brickproplist[0],
-                                      'brickpath': brickproplist[1]})
+                                      'brickpath': brickproplist[1],
+                                      'hostUuid': brick['hostUuid']})
         resultlist['volumes'].append(volDict)
 
     resultstring = json.dumps(resultlist)
