@@ -94,6 +94,35 @@ def getVolumeSelfHealStatus(args):
     return exitstatus, message
 
 
+def getVolumeGeoRepStatus(args):
+    try:
+        volume = glustercli.volumeGeoRepStatus(args.volume)
+    except glustercli.GlusterCmdFailedException as e:
+        out = ("Geo replication status could not be determined - %s"
+               % '.'.join(e.err))
+        return utils.PluginStatusCode.WARNING, out
+
+    if volume.get(args.volume) is None:
+        exitstatus = utils.PluginStatusCode.UNKNOWN
+        message = "UNKNOWN: Volume info not found"
+    else:
+        if (volume[args.volume]['status'] ==
+                glustercli.GeoRepStatus.PARTIAL_FAULTY):
+            exitstatus = utils.PluginStatusCode.WARNING
+            message = "Partially faulty - %s" % volume[args.volume]['detail']
+        elif volume[args.volume]['status'] == glustercli.GeoRepStatus.FAULTY:
+            exitstatus = utils.PluginStatusCode.CRITICAL
+            message = "Faulty - %s" % volume[args.volume]['detail']
+        elif (volume[args.volume]['status'] ==
+              glustercli.GeoRepStatus.NOT_STARTED):
+            exitstatus = utils.PluginStatusCode.WARNING
+            message = "Not Started"
+        else:
+            exitstatus = utils.PluginStatus.OK
+            message = "OK"
+    return exitstatus, message
+
+
 def parse_input():
     parser = argparse.ArgumentParser()
     parser.add_argument("-v", "--volume", action="store",
@@ -103,7 +132,7 @@ def parse_input():
                         default="info",
                         dest="type",
                         help="Type of status to be shown. Possible values:",
-                        choices=["info", "quota", "self-heal"])
+                        choices=["info", "quota", "self-heal", "geo-rep"])
     args = parser.parse_args()
     return args
 
@@ -116,5 +145,7 @@ if __name__ == '__main__':
         exitstatus, message = getVolumeQuotaStatus(args)
     if args.type == "self-heal":
         exitstatus, message = getVolumeSelfHealStatus(args)
+    if args.type == "geo-rep":
+        exitstatus, message = getVolumeGeoRepStatus(args)
     print message
     exit(exitstatus)

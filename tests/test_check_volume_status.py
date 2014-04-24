@@ -65,6 +65,21 @@ class TestCheckVolumeStatus(TestCaseBase):
                                          .getVolumeQuotaStatus(args))
         assert exitStatusCode == utils.PluginStatusCode.WARNING
 
+    @mock.patch('glusternagios.glustercli.volumeGeoRepStatus')
+    def test_checkVolumeGeoRepStatus(self, mock_GeoRepStatus):
+        mock_GeoRepStatus.return_value = _getGeoRepStatus(glustercli
+                                                          .GeoRepStatus.FAULTY)
+        args = ArgParseMock('test-cluster', 'test-vol', 'geo-rep')
+        exitStatusCode, exitStatusMsg = (check_volume_status
+                                         .getVolumeGeoRepStatus(args))
+        assert exitStatusCode == utils.PluginStatusCode.CRITICAL
+        mock_GeoRepStatus.return_value = _getGeoRepStatus(glustercli
+                                                          .GeoRepStatus
+                                                          .PARTIAL_FAULTY)
+        exitStatusCode, exitStatusMsg = (check_volume_status
+                                         .getVolumeGeoRepStatus(args))
+        assert exitStatusCode == utils.PluginStatusCode.WARNING
+
 
 def _getVolume():
     vol = {'test-vol': {'brickCount': 2,
@@ -100,3 +115,8 @@ def _expectedVolume():
 
 def _getEmptyVolume():
     return {}
+
+
+def _getGeoRepStatus(status):
+    return {'test-vol': {'status': status,
+                         'detail': "rhs3-2.novalocal - faulty;"}}
