@@ -93,6 +93,7 @@ def getVolumeSelfHealStatus(args):
                        % (volume[args.volume]['unsyncedentries']))
     return exitstatus, message
 
+
 def parse_input():
     parser = argparse.ArgumentParser()
     parser.add_argument("-v", "--volume", action="store",
