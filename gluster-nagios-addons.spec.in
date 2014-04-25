@@ -138,9 +138,9 @@ command[check_vol_status]=sudo %{_libdir}/nagios/plugins/gluster/check_volume_st
 command[check_vol_quota_status]=sudo %{_libdir}/nagios/plugins/gluster/check_volume_status.py -v \$ARG1\$ -t quota
 command[check_vol_heal_status]=sudo %{_libdir}/nagios/plugins/gluster/check_volume_status.py -v \$ARG1\$ -t self-heal
 ###Auto Discovery related
-command[discoverpeers]=%{_libdir}/nagios/plugins/gluster/discoverpeers.py
+command[discoverpeers]=sudo %{_libdir}/nagios/plugins/gluster/discoverpeers.py
 command[discoverlogicalcomponents]=sudo %{_libdir}/nagios/plugins/gluster/discoverlogicalcomponents.py
-command[discoverhostparams]=%{_libdir}/nagios/plugins/gluster/discoverhostparams.py
+command[discoverhostparams]=sudo %{_libdir}/nagios/plugins/gluster/discoverhostparams.py
 EOF
 %_init_enable nrpe
 %_init_restart crond
