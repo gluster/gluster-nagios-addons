@@ -19,6 +19,7 @@ dist_glusternagiosplugins_PYTHON = \
 	discoverpeers.py \
 	discoverlogicalcomponents.py \
 	discoverhostparams.py \
+	configure_gluster_node.py \
 	__init__.py \
 	memory.py \
 	network.py \
