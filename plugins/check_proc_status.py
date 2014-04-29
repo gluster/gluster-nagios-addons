@@ -19,7 +19,11 @@
 import sys
 import errno
 import socket
+import lockfile
+import logging
 import psutil
+import time
+from daemon import runner
 import nscautils
 import glusternagios
 
@@ -47,7 +51,8 @@ _glusterdService = "Gluster Management Daemon"
 _quotadService = "Gluster Quota Daemon"
 
 
-def sendBrickStatus(hostName, volInfo):
+def getBrickStatus(hostName, volInfo):
+    bricks = {}
     hostUuid = glustercli.hostUUIDGet()
     status = None
     for volumeName, volumeInfo in volInfo.iteritems():
@@ -78,15 +83,15 @@ def sendBrickStatus(hostName, volInfo):
                     msg = "OK: Brick %s" % brickPath
                 elif status != utils.PluginStatusCode.UNKNOWN:
                     msg = "CRITICAL: Brick %s is down" % brickPath
-                nscautils.send_to_nsca(hostName, brickService, status, msg)
+                bricks[brickService] = [status, msg]
+    return bricks
 
 
-def sendNfsStatus(hostName, volInfo):
+def getNfsStatus(hostName, volInfo):
     # if nfs is already running we need not to check further
     status, msg, error = utils.execCmd(_checkNfsCmd)
     if status == utils.PluginStatusCode.OK:
-        nscautils.send_to_nsca(hostName, _nfsService, status, msg)
-        return
+        return status, msg[0] if len(msg) > 0 else ""
 
     # if nfs is not running and any of the volume uses nfs
     # then its required to alert the user
@@ -101,36 +106,34 @@ def sendNfsStatus(hostName, volInfo):
     else:
         msg = "OK: No gluster volume uses nfs"
         status = utils.PluginStatusCode.OK
-    nscautils.send_to_nsca(hostName, _nfsService, status, msg)
+    return status, msg
 
 
-def sendSmbStatus(hostName, volInfo):
+def getSmbStatus(hostName, volInfo):
     status, msg, error = utils.execCmd(_checkSmbCmd)
     if status == utils.PluginStatusCode.OK:
-        nscautils.send_to_nsca(hostName, _smbService, status, msg)
-        return
+        return status, msg[0] if len(msg) > 0 else ""
 
     # if smb is not running and any of the volume uses smb
     # then its required to alert the use
     for k, v in volInfo.iteritems():
-        cifsStatus = v.get('options', {}).get('user.cifs', '')
-        smbStatus = v.get('options', {}).get('user.smb', '')
-        if cifsStatus == 'disable' or smbStatus == 'disable':
+        cifsStatus = v.get('options', {}).get('user.cifs', 'enable')
+        smbStatus = v.get('options', {}).get('user.smb', 'enable')
+        if cifsStatus == 'enable' and smbStatus == 'enable':
             msg = "CRITICAL: Process smb is not running"
             status = utils.PluginStatusCode.CRITICAL
             break
     else:
         msg = "OK: No gluster volume uses smb"
         status = utils.PluginStatusCode.OK
-    nscautils.send_to_nsca(hostName, _smbService, status, msg)
+    return status, msg
 
 
-def sendQuotadStatus(hostName, volInfo):
+def getQuotadStatus(hostName, volInfo):
     # if quota is already running we need not to check further
     status, msg, error = utils.execCmd(_checkQuotaCmd)
     if status == utils.PluginStatusCode.OK:
-        nscautils.send_to_nsca(hostName, _quotadService, status, msg)
-        return
+        return status, msg[0] if len(msg) > 0 else ""
 
     # if quota is not running and any of the volume uses quota
     # then the quotad process should be running in the host
@@ -143,14 +146,13 @@ def sendQuotadStatus(hostName, volInfo):
     else:
         msg = "OK: Quota not enabled"
         status = utils.PluginStatusCode.OK
-    nscautils.send_to_nsca(hostName, _quotadService, status, msg)
+    return status, msg
 
 
-def sendShdStatus(hostName, volInfo):
+def getShdStatus(hostName, volInfo):
     status, msg, error = utils.execCmd(_checkShdCmd)
     if status == utils.PluginStatusCode.OK:
-        nscautils.send_to_nsca(hostName, _shdService, status, msg)
-        return
+        return status, msg[0] if len(msg) > 0 else ""
 
     hostUuid = glustercli.hostUUIDGet()
     for volumeName, volumeInfo in volInfo.iteritems():
@@ -164,7 +166,7 @@ def sendShdStatus(hostName, volInfo):
     else:
         msg = "OK: Process Gluster Self Heal Daemon"
         status = utils.PluginStatusCode.OK
-    nscautils.send_to_nsca(hostName, _shdService, status, msg)
+    return status, msg
 
 
 def hasBricks(hostUuid, bricks):
@@ -174,31 +176,101 @@ def hasBricks(hostUuid, bricks):
     return False
 
 
+class App():
+    def __init__(self):
+        self.stdin_path = '/dev/null'
+        self.stdout_path = '/dev/tty'
+        self.stderr_path = '/dev/null'
+        self.pidfile_path = '/var/run/glusterpmd.pid'
+        self.pidfile_timeout = 5
+
+    def run(self):
+        hostName = nscautils.getCurrentHostNameInNagiosServer()
+        sleepTime = int(nscautils.getProcessMonitorSleepTime())
+        glusterdStatus = None
+        nfsStatus = None
+        smbStatus = None
+        shdStatus = None
+        quotaStatus = None
+        brickStatus = {}
+        while True:
+            if not hostName:
+                hostName = nscautils.getCurrentHostNameInNagiosServer()
+                if not hostName:
+                    logger.warn("Hostname is not configured")
+                    time.sleep(sleepTime)
+                    continue
+            status, msg, error = utils.execCmd(_checkGlusterdCmd)
+            if status != glusterdStatus or \
+                    status == utils.PluginStatusCode.CRITICAL:
+                glusterdStatus = status
+                msg = msg[0] if len(msg) > 0 else ""
+                nscautils.send_to_nsca(hostName, _glusterdService, status, msg)
+
+            # Get the volume status only if glusterfs is running to avoid
+            # unusual delay
+            if status != utils.PluginStatusCode.OK:
+                logger.warn("Glusterd is not running")
+                time.sleep(sleepTime)
+                continue
+
+            try:
+                volInfo = glustercli.volumeInfo()
+            except glusternagios.glustercli.GlusterCmdFailedException:
+                logger.error("failed to find volume info")
+                time.sleep(sleepTime)
+                continue
+
+            status, msg = getNfsStatus(hostName, volInfo)
+            if status != nfsStatus or \
+                    status == utils.PluginStatusCode.CRITICAL:
+                nfsStatus = status
+                nscautils.send_to_nsca(hostName, _nfsService, status, msg)
+
+            status, msg = getSmbStatus(hostName, volInfo)
+            if status != smbStatus or \
+                    status == utils.PluginStatusCode.CRITICAL:
+                smbStatus = status
+                nscautils.send_to_nsca(hostName, _smbService, status, msg)
+
+            status, msg = getShdStatus(hostName, volInfo)
+            if status != shdStatus or \
+                    status == utils.PluginStatusCode.CRITICAL:
+                shdStatus = status
+                nscautils.send_to_nsca(hostName, _shdService, status, msg)
+
+            status, msg = getQuotadStatus(hostName, volInfo)
+            if status != quotaStatus or \
+                    status == utils.PluginStatusCode.CRITICAL:
+                quotaStatus = status
+                nscautils.send_to_nsca(hostName, _quotadService, status, msg)
+
+            brick = getBrickStatus(hostName, volInfo)
+            # brickInfo contains status, and message
+            for brickService, brickInfo in brick.iteritems():
+                if brickInfo[0] != brickStatus.get(brickService, [None])[0] \
+                   or brickInfo[0] == utils.PluginStatusCode.CRITICAL:
+                    brickStatus[brickService] = brickInfo
+                    nscautils.send_to_nsca(hostName, brickService,
+                                           brickInfo[0], brickInfo[1])
+            time.sleep(sleepTime)
+
 if __name__ == '__main__':
-    hostName = nscautils.getCurrentHostNameInNagiosServer()
-    if not hostName:
-        hostName = socket.getfqdn()
-    if hostName == "localhost.localdomain" or hostName == "localhost":
-        sys.stderr.write("failed to find localhost fqdn")
+    app = App()
+    logger = logging.getLogger("GlusterProcLog")
+    logger.setLevel(logging.INFO)
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    handler = logging.FileHandler("/var/log/glusterpmd.log")
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
 
-    ### service check ###
-    status, msg, error = utils.execCmd(_checkGlusterdCmd)
-    nscautils.send_to_nsca(hostName, _glusterdService, status, msg)
-
-    # Get the volume status only if glusterfs is running to avoid
-    # unusual delay
-    if status != utils.PluginStatusCode.OK:
-        sys.exit(status)
-
+    daemonRunner = runner.DaemonRunner(app)
+    daemonRunner.daemon_context.files_preserve = [handler.stream]
     try:
-        volInfo = glustercli.volumeInfo()
-    except glusternagios.glustercli.GlusterCmdFailedException as e:
-        sys.exit(utils.PluginStatusCode.UNKNOWN)
-
-    sendNfsStatus(hostName, volInfo)
-    sendSmbStatus(hostName, volInfo)
-    sendShdStatus(hostName, volInfo)
-    sendQuotadStatus(hostName, volInfo)
-    sendBrickStatus(hostName, volInfo)
-
+        daemonRunner.do_action()
+    except lockfile.LockTimeout:
+        logger.error("failed to aquire lock")
+    except runner.DaemonRunnerStopFailureError:
+        logger.error("failed to get the lock file")
     sys.exit(utils.PluginStatusCode.OK)

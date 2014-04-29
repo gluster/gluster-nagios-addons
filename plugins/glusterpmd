@@ -1,0 +1,63 @@
+#! /bin/sh
+# glusterpmd    Start/Stop the gluster process monitoring daemon.
+#
+# chkconfig: 2345 90 60
+# description: Monitor gluster related processes and send
+#              details to nagios server whenever any changes
+#              observed in those services.
+#
+# Copyright (C) 2014 Red Hat Inc
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
+#
+
+BASE=glusterpmd
+
+# Fedora File System Layout dictates /run
+[ -e /run ] && RUNDIR="/run"
+PIDFILE="${RUNDIR:-/var/run}/${BASE}.pid"
+
+PID=`test -f $PIDFILE && cat $PIDFILE`
+
+case "$1" in
+  start)
+    if [ -f $PIDFILE ]; then
+        echo "glusterpmd service is already running with pid $PID"
+    else
+        echo "Starting gluster process monitoring service"
+        python /usr/lib64/nagios/plugins/gluster/check_proc_status.py start
+    fi
+    ;;
+  stop)
+    if [ -f $PIDFILE ]; then
+        echo "Stopping gluster process monitoring service"
+        python /usr/lib64/nagios/plugins/gluster/check_proc_status.py stop
+    fi
+    ;;
+  restart)
+    if [ -f $PIDFILE ]; then
+        echo "Restarting gluster process monitoring service"
+        python /usr/lib64/nagios/plugins/gluster/check_proc_status.py restart
+    else
+        python /usr/lib64/nagios/plugins/gluster/check_proc_status.py start
+    fi
+    ;;
+  *)
+    echo "Usage: /etc/init.d/glusterpmd {start|stop|restart}"
+    exit 1
+    ;;
+esac
+
+exit 0

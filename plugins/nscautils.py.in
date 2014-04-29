@@ -43,6 +43,12 @@ def getNagiosClusterName():
     return config.get('NAGIOS-DEFINTIONS', 'cluster_name')
 
 
+def getProcessMonitorSleepTime():
+    config = ConfigParser.ConfigParser()
+    config.read(__NAGIOSSERVER_CONF)
+    return config.get('HOST-CONF', 'proc-mon-sleep-time')
+
+
 def send_to_nsca(hostName, serviceName, exitStatus, resultString):
     cmddata = '%s\t%s\t%s\t%s\n' % (hostName,
                                     serviceName,

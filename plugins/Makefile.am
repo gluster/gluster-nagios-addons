@@ -2,10 +2,14 @@ SUBDIRS = \
 	volcap \
 	$(NULL)
 
+initdir = $(sysconfdir)/init.d
+init_DATA = \
+	glusterpmd \
+	$(NULL)
+
 cronddir = $(sysconfdir)/cron.d
 crond_DATA = \
 	gluster-sysstat.crontab \
-	gluster-proc.crontab \
 	$(NULL)
 
 dist_glusternagiosplugins_PYTHON = \
@@ -29,5 +33,6 @@ dist_glusternagiosplugins_PYTHON = \
 	$(NULL)
 
 EXTRA_DIST = \
+	$(init_DATA) \
 	$(crond_DATA) \
 	$(NULL)
