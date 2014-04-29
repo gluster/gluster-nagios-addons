@@ -56,7 +56,8 @@ def sendBrickStatus(hostName, volInfo):
         for brick in volumeInfo['bricksInfo']:
             if brick.get('hostUuid') != hostUuid:
                 continue
-            brickService = "Brick Status - %s" % brick['name']
+            brickPath = brick['name'].split(':')[1]
+            brickService = "Brick Status - %s" % brickPath
             pidFile = brick['name'].replace(
                 ":/", "-").replace("/", "-") + ".pid"
             try:
@@ -71,12 +72,12 @@ def sendBrickStatus(hostName, volInfo):
                     status = utils.PluginStatusCode.CRITICAL
                 else:
                     status = utils.PluginStatusCode.UNKNOWN
-                    msg = "UNKNOWN: Brick %s: %s" % (brick['name'], str(e))
+                    msg = "UNKNOWN: Brick %s: %s" % (brickPath, str(e))
             finally:
                 if status == utils.PluginStatusCode.OK:
-                    msg = "OK: Brick %s" % brick['name']
+                    msg = "OK: Brick %s" % brickPath
                 elif status != utils.PluginStatusCode.UNKNOWN:
-                    msg = "CRITICAL: Brick %s is down" % brick['name']
+                    msg = "CRITICAL: Brick %s is down" % brickPath
                 nscautils.send_to_nsca(hostName, brickService, status, msg)
 
 
