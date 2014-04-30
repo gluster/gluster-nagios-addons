@@ -17,7 +17,6 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-import json
 import mock
 
 from testrunner import PluginsTestCase as TestCaseBase
@@ -43,8 +42,7 @@ class TestCheckVolumeStatus(TestCaseBase):
         exitStatusCode, exitStatusMsg = (check_volume_status
                                          .getVolumeStatus(args))
         print exitStatusMsg
-        print _expectedVolume()
-        assert exitStatusMsg == ("OK: Volume is up \n%s" % _expectedVolume())
+        assert exitStatusMsg == "OK: Volume is up"
         assert exitStatusCode == utils.PluginStatusCode.OK
 
     # Method to test volume status when no volume
@@ -99,18 +97,6 @@ def _getVolume():
                          'volumeStatus': 'ONLINE',
                          'volumeType': 'DISTRIBUTED'}}
     return vol
-
-
-def _expectedVolume():
-    vol = {'test-vol': {'brickCount': 2,
-                        'bricks': ['server1:/path1', 'server2:/path2'],
-                        'options': {},
-                        'transportType': ['tcp'],
-                        'uuid': '0000-0000-0000-1111',
-                        'volumeName': 'test-vol',
-                        'volumeStatus': 'ONLINE',
-                        'volumeType': 'DISTRIBUTED'}}
-    return json.dumps(vol)
 
 
 def _getEmptyVolume():
