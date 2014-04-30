@@ -52,10 +52,10 @@ def processQuotaMsg(msg, alertlevel):
         alertMsg = "QUOTA: " + msg[msg.rfind(matches.group()) +
                                    len(matches.group()) + 1:]
         serviceName = nscautils.vol_service_name(volname, "Quota")
-        nscautils.send_to_nsca(nscautils.getNagiosClusterName(),
-                               serviceName,
-                               getStatusCode(alertlevel),
-                               alertMsg)
+        nscautils.send_to_nsca_subproc(nscautils.getNagiosClusterName(),
+                                       serviceName,
+                                       getStatusCode(alertlevel),
+                                       alertMsg)
 
 
 def processMsg(msg):

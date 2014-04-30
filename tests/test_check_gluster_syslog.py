@@ -29,7 +29,7 @@ class TestGlusterSyslog(TestCaseBase):
 
     # Method to test volume perf data when no matching host method
     @mock.patch('plugins.nscautils.getNagiosClusterName')
-    @mock.patch('plugins.nscautils.send_to_nsca')
+    @mock.patch('plugins.nscautils.send_to_nsca_subproc')
     def test_checkProcessMsg(self, mock_send_to_nsca,
                              mock_getNagiosClusterName):
         mock_getNagiosClusterName.return_value = "test-cluster"
