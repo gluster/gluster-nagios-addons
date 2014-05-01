@@ -144,7 +144,8 @@ command[check_vol_utilization]=sudo %{_libdir}/nagios/plugins/gluster/check_vol_
 command[check_vol_status]=sudo %{_libdir}/nagios/plugins/gluster/check_volume_status.py -v \$ARG1\$ -t \$ARG2\$
 ###Auto Discovery related
 command[discoverpeers]=sudo %{_libdir}/nagios/plugins/gluster/discoverpeers.py
-command[discoverlogicalcomponents]=sudo %{_libdir}/nagios/plugins/gluster/discoverlogicalcomponents.py
+command[discover_volume_list]=sudo %{_libdir}/nagios/plugins/gluster/discover_volumes.py -l
+command[discover_volume_info]=sudo %{_libdir}/nagios/plugins/gluster/discover_volumes.py -v \$ARG1\$
 command[discoverhostparams]=sudo %{_libdir}/nagios/plugins/gluster/discoverhostparams.py
 command[configure_gluster_node]=sudo %{_libdir}/nagios/plugins/gluster/configure_gluster_node.py -c \$ARG1\$ -n \$ARG2\$ -H \$ARG3\$
 EOF

@@ -17,7 +17,7 @@ dist_glusternagiosplugins_PYTHON = \
 	check_proc_status.py \
 	cpu.py \
 	discoverpeers.py \
-	discoverlogicalcomponents.py \
+	discover_volumes.py \
 	discoverhostparams.py \
 	configure_gluster_node.py \
 	__init__.py \

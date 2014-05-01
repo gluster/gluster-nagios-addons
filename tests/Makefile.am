@@ -32,6 +32,7 @@ test_modules = \
 	test_sadf.py \
 	test_swap.py \
 	test_swap_dataFile.py \
+	test_discover_volumes.py \
 	$(NULL)
 
 dist_glusternagiosaddonstests_DATA = \
