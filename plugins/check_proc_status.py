@@ -29,6 +29,7 @@ import glusternagios
 
 from glusternagios import utils
 from glusternagios import glustercli
+from glusternagios import storage
 
 
 _checkProc = utils.CommandPath('check_proc',
@@ -51,6 +52,8 @@ _brickService = "Brick - "
 _glusterdService = "Gluster Management"
 _quotadService = "Quota"
 _ctdbdService = "CTDB"
+checkIdeSmartCmdPath = utils.CommandPath(
+    'check_ide_smart', '/usr/lib64/nagios/plugins/check_ide_smart')
 
 
 def getBrickStatus(volInfo):
@@ -72,6 +75,18 @@ def getBrickStatus(volInfo):
                         _glusterVolPath, volumeName, pidFile)) as f:
                     if psutil.pid_exists(int(f.read().strip())):
                         status = utils.PluginStatusCode.OK
+                        #Now check the status of the underlying physical disk
+                        brickDevice = storage.getBrickDeviceName(
+                            brick['name'].split(":")[1])
+                        disk = storage.getDisksForBrick(
+                            brickDevice)
+                        cmd = [checkIdeSmartCmdPath.cmd, "-d", disk, "-n"]
+                        rc, out, err = utils.execCmd(cmd)
+                        if rc == utils.PluginStatusCode.CRITICAL and \
+                                "tests failed" in out[0]:
+                            status = utils.PluginStatusCode.WARNING
+                            msg = "WARNING: Brick %s: %s" % (
+                                brick['name'], out[0])
                     else:
                         status = utils.PluginStatusCode.CRITICAL
             except IOError, e:
