@@ -47,8 +47,8 @@ def create_arg_parser():
     parser.add_argument('-n', '--nagios', action='store', dest='nagios',
                         type=str, required=True, help='Nagios Server Address')
     parser.add_argument('-H', '--hostname', action='store', dest='hostname',
-                       type=str, required=True,
-                       help='Name of the host in Nagios Configuration')
+                        type=str, required=True,
+                        help='Name of the host in Nagios Configuration')
     return parser
 
 
