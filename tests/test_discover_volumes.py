@@ -39,12 +39,12 @@ class TestDiscoverVolumes(TestCaseBase):
         if volumeName:
             return {volumeName: volumes.get(volumeName)}
         else:
-            return  volumes
+            return volumes
 
     def _getBrickByHostAndPath(self, bricksList, hostUuid, path):
         for brick in bricksList:
             if brick.get('hostUuid') == hostUuid and \
-                            brick.get('brickpath') == path:
+                    brick.get('brickpath') == path:
                 return brick
         return None
 
