@@ -18,7 +18,6 @@
 
 import sys
 import errno
-import socket
 import lockfile
 import logging
 import psutil
