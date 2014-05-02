@@ -23,6 +23,7 @@ import logging
 import psutil
 import time
 from daemon import runner
+from logging import handlers
 import nscautils
 import glusternagios
 
@@ -37,20 +38,22 @@ _glusterVolPath = "/var/lib/glusterd/vols"
 _checkNfsCmd = [_checkProc.cmd, "-c", "1:", "-C", "glusterfs", "-a", "nfs"]
 _checkShdCmd = [_checkProc.cmd, "-c", "1:", "-C", "glusterfs", "-a",
                 "glustershd"]
-_checkSmbCmd = [_checkProc.cmd, "-C", "smb"]
+_checkSmbCmd = [_checkProc.cmd, "-c", "1:", "-C", "smbd"]
 _checkQuotaCmd = [_checkProc.cmd, "-c", "1:", "-C", "glusterfs", "-a",
                   "quotad"]
 _checkBrickCmd = [_checkProc.cmd, "-C", "glusterfsd"]
 _checkGlusterdCmd = [_checkProc.cmd, "-c", "1:", "-w", "1:1", "-C", "glusterd"]
+_checkCtdbCmd = [_checkProc.cmd, "-c", "1:", "-C", "ctdbd"]
 _nfsService = "Glusterfs NFS Daemon"
 _shdService = "Glusterfs Self-Heal Daemon"
 _smbService = "CIFS"
 _brickService = "Brick Status - "
 _glusterdService = "Gluster Management Daemon"
 _quotadService = "Gluster Quota Daemon"
+_ctdbdService = "CTDB"
 
 
-def getBrickStatus(hostName, volInfo):
+def getBrickStatus(volInfo):
     bricks = {}
     hostUuid = glustercli.hostUUIDGet()
     status = None
@@ -86,7 +89,7 @@ def getBrickStatus(hostName, volInfo):
     return bricks
 
 
-def getNfsStatus(hostName, volInfo):
+def getNfsStatus(volInfo):
     # if nfs is already running we need not to check further
     status, msg, error = utils.execCmd(_checkNfsCmd)
     if status == utils.PluginStatusCode.OK:
@@ -108,13 +111,39 @@ def getNfsStatus(hostName, volInfo):
     return status, msg
 
 
-def getSmbStatus(hostName, volInfo):
+def getCtdbStatus(smbStatus, nfsStatus):
+    if smbStatus != utils.PluginStatusCode.OK and \
+       nfsStatus != utils.PluginStatusCode.OK:
+        return (utils.PluginStatusCode.OK,
+                "CTDB ignored as SMB and NFS are not running")
+
+    status, msg, error = utils.execCmd(_checkCtdbCmd)
+    if status != utils.PluginStatusCode.OK:
+        return utils.PluginStatusCode.UNKNOWN, "CTDB not configured"
+
+    # CTDB, SMB/NFS are running
+    status, msg, error = utils.execCmd(['ctdb', 'nodestatus'])
+    if status == utils.PluginStatusCode.OK:
+        if len(msg) > -1:
+            message = msg[0].split()
+            if len(message) > 1:
+                msg = "Node status: %s" % message[2]
+                if message[2] == 'UNHEALTHY':
+                    status = utils.PluginStatusCode.WARNING
+                elif message[2] in ['DISCONNECTED', 'BANNED', 'INACTIVE']:
+                    status = utils.PluginStatusCode.CRITICAL
+                else:
+                    status = utils.PluginStatusCode.UNKNOWN
+    return status, msg
+
+
+def getSmbStatus(volInfo):
     status, msg, error = utils.execCmd(_checkSmbCmd)
     if status == utils.PluginStatusCode.OK:
         return status, msg[0] if len(msg) > 0 else ""
 
     # if smb is not running and any of the volume uses smb
-    # then its required to alert the use
+    # then its required to alert the user
     for k, v in volInfo.iteritems():
         cifsStatus = v.get('options', {}).get('user.cifs', 'enable')
         smbStatus = v.get('options', {}).get('user.smb', 'enable')
@@ -128,7 +157,7 @@ def getSmbStatus(hostName, volInfo):
     return status, msg
 
 
-def getQuotadStatus(hostName, volInfo):
+def getQuotadStatus(volInfo):
     # if quota is already running we need not to check further
     status, msg, error = utils.execCmd(_checkQuotaCmd)
     if status == utils.PluginStatusCode.OK:
@@ -148,7 +177,7 @@ def getQuotadStatus(hostName, volInfo):
     return status, msg
 
 
-def getShdStatus(hostName, volInfo):
+def getShdStatus(volInfo):
     status, msg, error = utils.execCmd(_checkShdCmd)
     if status == utils.PluginStatusCode.OK:
         return status, msg[0] if len(msg) > 0 else ""
@@ -191,6 +220,7 @@ class App():
         smbStatus = None
         shdStatus = None
         quotaStatus = None
+        ctdbStatus = None
         brickStatus = {}
         while True:
             if not hostName:
@@ -220,31 +250,37 @@ class App():
                 time.sleep(sleepTime)
                 continue
 
-            status, msg = getNfsStatus(hostName, volInfo)
+            status, msg = getNfsStatus(volInfo)
             if status != nfsStatus or \
                     status == utils.PluginStatusCode.CRITICAL:
                 nfsStatus = status
                 nscautils.send_to_nsca(hostName, _nfsService, status, msg)
 
-            status, msg = getSmbStatus(hostName, volInfo)
+            status, msg = getSmbStatus(volInfo)
             if status != smbStatus or \
                     status == utils.PluginStatusCode.CRITICAL:
                 smbStatus = status
                 nscautils.send_to_nsca(hostName, _smbService, status, msg)
 
-            status, msg = getShdStatus(hostName, volInfo)
+            status, msg = getCtdbStatus(smbStatus, nfsStatus)
+            if status != ctdbStatus or \
+                    status == utils.PluginStatusCode.CRITICAL:
+                ctdbStatus = status
+                nscautils.send_to_nsca(hostName, _ctdbdService, status, msg)
+
+            status, msg = getShdStatus(volInfo)
             if status != shdStatus or \
                     status == utils.PluginStatusCode.CRITICAL:
                 shdStatus = status
                 nscautils.send_to_nsca(hostName, _shdService, status, msg)
 
-            status, msg = getQuotadStatus(hostName, volInfo)
+            status, msg = getQuotadStatus(volInfo)
             if status != quotaStatus or \
                     status == utils.PluginStatusCode.CRITICAL:
                 quotaStatus = status
                 nscautils.send_to_nsca(hostName, _quotadService, status, msg)
 
-            brick = getBrickStatus(hostName, volInfo)
+            brick = getBrickStatus(volInfo)
             # brickInfo contains status, and message
             for brickService, brickInfo in brick.iteritems():
                 if brickInfo[0] != brickStatus.get(brickService, [None])[0] \
@@ -260,7 +296,8 @@ if __name__ == '__main__':
     logger.setLevel(logging.INFO)
     formatter = logging.Formatter(
         "%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-    handler = logging.FileHandler("/var/log/glusterpmd.log")
+    handler = handlers.TimedRotatingFileHandler(
+        "/var/log/glusterpmd.log", 'midnight')
     handler.setFormatter(formatter)
     logger.addHandler(handler)
 
