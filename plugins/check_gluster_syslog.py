@@ -22,6 +22,7 @@
 import re
 import sys
 import select
+import logging
 
 import nscautils
 from glusternagios import utils
@@ -58,14 +59,44 @@ def processQuotaMsg(msg, alertlevel):
                                        alertMsg)
 
 
+def processQuorumMsg(msgid, msg, level):
+    logger = logging.getLogger("processQuorumMsg")
+    pluginstatus = None
+    #if msgid == 106002:
+    if "[MSGID: 106002]" in msg or "[MSGID: 106001]" in msg:
+        # [MSGID: 106002] Server quorum lost for volume dist.
+        #  Stopping local bricks.
+        # [MSGID: 106001] Server quorum not met. Rejecting operation.
+        pluginstatus = utils.PluginStatusCode.CRITICAL
+    #elif msgid == 106003:
+    elif "[MSGID: 106003]" in msg:
+        # [MSGID: 106003] Server quorum regained for volume dist.
+        #  Starting local bricks.
+        pluginstatus = utils.PluginStatusCode.OK
+
+    if pluginstatus >= 0:
+        serviceName = "Cluster - Quorum"
+        alertMsg = "QUORUM:" + msg[msg.rfind(':') + 1:]
+        ret = nscautils.send_to_nsca_subproc(nscautils.getNagiosClusterName(),
+                                             serviceName,
+                                             pluginstatus,
+                                             alertMsg)
+        logger.debug(" nsca ret code for alertMsg %s - %s" % (alertMsg, ret))
+
+
 def processMsg(msg):
     'Check if msg is indeed from gluster app'
     custom_logvars = msg[:msg.find(' ')]
     level = custom_logvars.split('/')[2]
+    msgid = custom_logvars.split('/')[0]
+    # if msgid in ([106001,106002,106003]):
+    # msgid is not populated correctly, so for now use below
+    if "[MSGID: 10600" in msg:
+        return processQuorumMsg(msgid, msg, level)
     # For gluster messages, need to check the source of message
     logsource = msg[msg.rfind('['):msg.rfind(']')]
     if logsource.find('quota') > -1:
-        processQuotaMsg(msg, level)
+        return processQuotaMsg(msg, level)
 
 
 def onReceive(msgs):
@@ -94,6 +125,8 @@ two-way conversations with rsyslog. Do NOT change this!
 See also: https://github.com/rsyslog/rsyslog/issues/22
 """
 if __name__ == '__main__':
+    logging.basicConfig()
+    logger = logging.getLogger(__name__)
     keepRunning = 1
     while keepRunning == 1:
         while keepRunning and sys.stdin in \

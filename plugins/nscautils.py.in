@@ -69,15 +69,15 @@ def send_to_nsca_subproc(hostName, serviceName, exitStatus, resultString):
                                     resultString)
     nagiosIP = getNagiosServerIP()
     p = subprocess.Popen(
-            args=(
-                  __NSCA_CMD_PATH.cmd,
-                  '-c',  __NSCA_CONF_PATH,
-                  '-H', nagiosIP,
-            ),
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            close_fds=True,
+        args=(
+            __NSCA_CMD_PATH.cmd,
+            '-c',  __NSCA_CONF_PATH,
+            '-H', nagiosIP,
+        ),
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        close_fds=True,
         )
 
     stdout, stderr = p.communicate(input=cmddata)
@@ -86,4 +86,4 @@ def send_to_nsca_subproc(hostName, serviceName, exitStatus, resultString):
 
 
 def vol_service_name(volName, statusType=None):
-    return "Volume Status %s - %s" % (statusType, volName)
+    return "Volume %s - %s" % (statusType, volName)

@@ -39,8 +39,40 @@ class TestGlusterSyslog(TestCaseBase):
                    "Usage is above soft limit: 300.0KB used by /test/")
         check_gluster_syslog.processMsg(message)
         mock_send_to_nsca.assert_called_with("test-cluster",
-                                             "Volume Status Quota - test-vol",
+                                             "Volume Quota - test-vol",
                                              utils.PluginStatusCode.WARNING,
                                              "QUOTA: Usage is "
                                              "above soft limit: "
                                              "300.0KB used by /test/")
+
+    @mock.patch('plugins.nscautils.getNagiosClusterName')
+    @mock.patch('plugins.nscautils.send_to_nsca_subproc')
+    def test_checkProcessMsgForQuorum(self, mock_send_to_nsca,
+                                      mock_getNagiosClusterName):
+        mock_getNagiosClusterName.return_value = "test-cluster"
+        message = ("-/DAEMON/CRIT/ETC-GLUSTERFS-GLUSTERD.VOL "
+                   "[2014-05-02T12:40:14.562509+00:00]  "
+                   "[2014-05-02 12:40:14.559662] C [MSGID: 106002] "
+                   "[glusterd-utils.c:3376:glusterd_do_volume_quorum_action] "
+                   "0-management: Server quorum lost for volume dist. "
+                   "Stopping local bricks. ")
+        check_gluster_syslog.processMsg(message)
+        mock_send_to_nsca.assert_called_with("test-cluster",
+                                             "Cluster - Quorum",
+                                             utils.PluginStatusCode.CRITICAL,
+                                             "QUORUM: Server quorum lost "
+                                             "for volume dist. "
+                                             "Stopping local bricks. ")
+
+    @mock.patch('plugins.nscautils.getNagiosClusterName')
+    @mock.patch('plugins.nscautils.send_to_nsca_subproc')
+    def test_checkProcessInvalidMsgForQuorum(self, mock_send_to_nsca,
+                                             mock_getNagiosClusterName):
+        mock_getNagiosClusterName.return_value = "test-cluster"
+        message = ("-/DAEMON/CRIT/ETC-GLUSTERFS-GLUSTERD.VOL "
+                   "[2014-05-02T12:40:14.562509+00:00]  "
+                   "[2014-05-02 12:40:14.559662] C "
+                   "[glusterd-utils.c:3376:glusterd_do_volume_quorum_action] "
+                   "0-management: Random quorum message ")
+        check_gluster_syslog.processMsg(message)
+        assert not mock_send_to_nsca.called, "send nsca should not be called"
