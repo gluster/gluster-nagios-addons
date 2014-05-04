@@ -114,7 +114,7 @@ def getVolumeGeoRepStatus(args):
             exitstatus = utils.PluginStatusCode.WARNING
             message = "Not Started"
         else:
-            exitstatus = utils.PluginStatus.OK
+            exitstatus = utils.PluginStatusCode.OK
             message = "OK"
     return exitstatus, message
 
