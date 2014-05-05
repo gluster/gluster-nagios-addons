@@ -21,18 +21,17 @@ import json
 
 from glusternagios import utils
 from glusternagios import glustercli
-from glusternagios.glustercli import HostStatus
 
 
 def discoverhosts():
     resultlist = []
     peers = glustercli.peerStatus()
     for peer in peers:
-        if peer['status'] == HostStatus.CONNECTED:
-            peerDict = {}
-            peerDict['hostip'] = peer['hostname']
-            peerDict['uuid'] = peer['uuid']
-            resultlist.append(peerDict)
+        peerDict = {}
+        peerDict['hostip'] = peer['hostname']
+        peerDict['uuid'] = peer['uuid']
+        peerDict['status'] = peer['status']
+        resultlist.append(peerDict)
     resultstring = json.dumps(resultlist)
     print resultstring
     sys.exit(utils.PluginStatusCode.OK)
