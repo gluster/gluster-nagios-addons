@@ -78,7 +78,7 @@ def send_to_nsca_subproc(hostName, serviceName, exitStatus, resultString):
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         close_fds=True,
-        )
+    )
 
     stdout, stderr = p.communicate(input=cmddata)
     rc = p.returncode
