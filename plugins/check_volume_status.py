@@ -48,15 +48,26 @@ def getVolumeStatus(args):
 
 def getVolumeQuotaStatus(args):
     try:
-        status = glustercli.volumeQuotaStatus(args.volume)
+        qstatus = glustercli.volumeQuotaStatus(args.volume)
     except glustercli.GlusterCmdFailedException as e:
         out = ("QUOTA: Quota status could not be determined %s"
                % '.'.join(e.err))
         return utils.PluginStatusCode.UNKNOWN, out
 
-    if status == glustercli.VolumeQuotaStatus.EXCEEDED:
-        return utils.PluginStatusCode.WARNING, "QUOTA: limit exceeded"
-    elif status == glustercli.VolumeQuotaStatus.DISABLED:
+    returnMsg = "QUOTA:"
+    if qstatus.get("hard_ex_dirs") is not None:
+        hard_limit_ex = ', '.join(qstatus['hard_ex_dirs'])
+        returnMsg += ("hard limit exceeded on %s; " % hard_limit_ex)
+    if qstatus.get('soft_ex_dirs'):
+        soft_limit_ex = ', '.join(qstatus['soft_ex_dirs'])
+        returnMsg += ("soft limit exceeded on %s" % soft_limit_ex)
+
+    if qstatus['status'] == glustercli.VolumeQuotaStatus.SOFT_LIMIT_EXCEEDED:
+        return utils.PluginStatusCode.WARNING, returnMsg
+    elif (qstatus['status'] ==
+          glustercli.VolumeQuotaStatus.HARD_LIMIT_EXCEEDED):
+        return utils.PluginStatusCode.CRITICAL, returnMsg
+    elif qstatus['status'] == glustercli.VolumeQuotaStatus.DISABLED:
         return utils.PluginStatusCode.OK, "QUOTA: not enabled or configured"
     else:
         return utils.PluginStatusCode.OK, "QUOTA: OK"

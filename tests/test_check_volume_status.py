@@ -56,12 +56,18 @@ class TestCheckVolumeStatus(TestCaseBase):
 
     @mock.patch('glusternagios.glustercli.volumeQuotaStatus')
     def test_checkVolumeQuotaStatus(self, mock_volumeQuotaStatus):
-        mock_volumeQuotaStatus.return_value = glustercli.\
-            VolumeQuotaStatus.EXCEEDED
         args = ArgParseMock('test-cluster', 'test-vol', 'quota')
+        mock_volumeQuotaStatus.return_value = _getQuotaStatusHardLimit()
         exitStatusCode, exitStatusMsg = (check_volume_status
                                          .getVolumeQuotaStatus(args))
-        assert exitStatusCode == utils.PluginStatusCode.WARNING
+        assert exitStatusCode == utils.PluginStatusCode.CRITICAL
+        self.assertEqual("QUOTA:hard limit exceeded on dir1, dir2; "
+                         "soft limit exceeded on dir3", exitStatusMsg)
+        mock_volumeQuotaStatus.return_value = _getQuotaStatusOk()
+        exitStatusCode, exitStatusMsg = (check_volume_status
+                                         .getVolumeQuotaStatus(args))
+        assert exitStatusCode == utils.PluginStatusCode.OK
+        self.assertEqual("QUOTA: OK", exitStatusMsg)
 
     @mock.patch('glusternagios.glustercli.volumeGeoRepStatus')
     def test_checkVolumeGeoRepStatus(self, mock_GeoRepStatus):
@@ -101,6 +107,18 @@ def _getVolume():
 
 def _getEmptyVolume():
     return {}
+
+
+def _getQuotaStatusHardLimit():
+    return {'status': 'HARD_LIMIT_EXCEEDED',
+            'hard_ex_dirs': ['dir1', 'dir2'],
+            'soft_ex_dirs': ['dir3']}
+
+
+def _getQuotaStatusOk():
+    return {'status': 'OK',
+            'hard_ex_dirs': [],
+            'soft_ex_dirs': []}
 
 
 def _getGeoRepStatus(status):
