@@ -44,12 +44,12 @@ _checkQuotaCmd = [_checkProc.cmd, "-c", "1:", "-C", "glusterfs", "-a",
 _checkBrickCmd = [_checkProc.cmd, "-C", "glusterfsd"]
 _checkGlusterdCmd = [_checkProc.cmd, "-c", "1:", "-w", "1:1", "-C", "glusterd"]
 _checkCtdbCmd = [_checkProc.cmd, "-c", "1:", "-C", "ctdbd"]
-_nfsService = "Glusterfs NFS Daemon"
-_shdService = "Glusterfs Self-Heal Daemon"
+_nfsService = "NFS"
+_shdService = "Self-Heal"
 _smbService = "CIFS"
-_brickService = "Brick Status - "
-_glusterdService = "Gluster Management Daemon"
-_quotadService = "Gluster Quota Daemon"
+_brickService = "Brick - "
+_glusterdService = "Gluster Management"
+_quotadService = "Quota"
 _ctdbdService = "CTDB"
 
 
