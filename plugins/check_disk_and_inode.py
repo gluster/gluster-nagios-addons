@@ -149,28 +149,30 @@ def showDiskUsage(warn, crit, mountPaths, toListInode, usage=False,
                     crit * inode['used'] / 100,
                     inode['used'])
         else:
-            data = "%s=%.2f;%s;%s;0;100" % (
+            data = "%s=%.2f;%s;%s;0;%s" % (
                 disk['path'],
                 disk['usePcent'],
                 warn,
-                crit)
+                crit,
+                disk['size'])
 
             if toListInode:
-                data += " %s=%.2f;%s;%s;0;100" % (
+                data += " %s=%.2f;%s;%s;0;%s" % (
                     inode['path'],
                     inode['usePcent'],
                     warn,
-                    crit)
+                    crit,
+                    inode['size'])
         diskPerf.append(data)
 
         if disk['usePcent'] >= crit or inode['usePcent'] >= crit:
             if disk['usePcent'] >= crit:
                 critList.append(
-                    "crit:disk:%s;%s;%s" % (disk['fs'],
+                    "crit:disk:%s;%s;%s%%" % (disk['fs'],
                                             disk['path'],
                                             disk['usePcent']))
             else:
-                critList.append("crit:inode:%s;%s;%s" % (inode['fs'],
+                critList.append("crit:inode:%s;%s;%s%%" % (inode['fs'],
                                                          inode['path'],
                                                          inode['usePcent']))
             if not level > utils.PluginStatusCode.WARNING:
@@ -178,11 +180,11 @@ def showDiskUsage(warn, crit, mountPaths, toListInode, usage=False,
         elif (disk['usePcent'] >= warn and disk['usePcent'] < crit) or (
                 inode['usePcent'] >= warn and inode['usePcent'] < crit):
             if disk['usePcent'] >= warn:
-                warnList.append("warn:disk:%s;%s;%s" % (disk['fs'],
+                warnList.append("warn:disk:%s;%s;%s%%" % (disk['fs'],
                                                         disk['path'],
                                                         disk['usePcent']))
             else:
-                warnList.append("warn:inode:%s;%s;%s" % (inode['fs'],
+                warnList.append("warn:inode:%s;%s;%s%%" % (inode['fs'],
                                                          inode['path'],
                                                          inode['usePcent']))
             if not level > utils.PluginStatusCode.OK:
