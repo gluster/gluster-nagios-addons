@@ -17,34 +17,19 @@
 #
 
 import sys
-import errno
 import lockfile
 import logging
-import psutil
 import time
 from daemon import runner
 from logging import handlers
 import nscautils
+import check_proc_util
 import glusternagios
 
 from glusternagios import utils
 from glusternagios import glustercli
-from glusternagios import storage
 
 
-_checkProc = utils.CommandPath('check_proc',
-                               '/usr/lib64/nagios/plugins/check_procs')
-
-_glusterVolPath = "/var/lib/glusterd/vols"
-_checkNfsCmd = [_checkProc.cmd, "-c", "1:", "-C", "glusterfs", "-a", "nfs"]
-_checkShdCmd = [_checkProc.cmd, "-c", "1:", "-C", "glusterfs", "-a",
-                "glustershd"]
-_checkSmbCmd = [_checkProc.cmd, "-c", "1:", "-C", "smbd"]
-_checkQuotaCmd = [_checkProc.cmd, "-c", "1:", "-C", "glusterfs", "-a",
-                  "quotad"]
-_checkBrickCmd = [_checkProc.cmd, "-C", "glusterfsd"]
-_checkGlusterdCmd = [_checkProc.cmd, "-c", "1:", "-w", "1:1", "-C", "glusterd"]
-_checkCtdbCmd = [_checkProc.cmd, "-c", "1:", "-C", "ctdbd"]
 _nfsService = "NFS"
 _shdService = "Self-Heal"
 _smbService = "CIFS"
@@ -59,164 +44,18 @@ checkIdeSmartCmdPath = utils.CommandPath(
 def getBrickStatus(volInfo):
     bricks = {}
     hostUuid = glustercli.hostUUIDGet()
-    status = None
     for volumeName, volumeInfo in volInfo.iteritems():
         if volumeInfo['volumeStatus'] == glustercli.VolumeStatus.OFFLINE:
             continue
         for brick in volumeInfo['bricksInfo']:
             if brick.get('hostUuid') != hostUuid:
                 continue
+            status, msg = check_proc_util.getBrickStatus(volumeName,
+                                                         brick['name'])
             brickPath = brick['name'].split(':')[1]
             brickService = _brickService % brickPath
-            pidFile = brick['name'].replace(
-                ":/", "-").replace("/", "-") + ".pid"
-            try:
-                with open("%s/%s/run/%s" % (
-                        _glusterVolPath, volumeName, pidFile)) as f:
-                    if psutil.pid_exists(int(f.read().strip())):
-                        status = utils.PluginStatusCode.OK
-                        #Now check the status of the underlying physical disk
-                        brickDevice = storage.getBrickDeviceName(
-                            brick['name'].split(":")[1])
-                        disk = storage.getDisksForBrick(
-                            brickDevice)
-                        cmd = [checkIdeSmartCmdPath.cmd, "-d", disk, "-n"]
-                        rc, out, err = utils.execCmd(cmd)
-                        if rc == utils.PluginStatusCode.CRITICAL and \
-                                "tests failed" in out[0]:
-                            status = utils.PluginStatusCode.WARNING
-                            msg = "WARNING: Brick %s: %s" % (
-                                brick['name'], out[0])
-                    else:
-                        status = utils.PluginStatusCode.CRITICAL
-            except IOError, e:
-                if e.errno == errno.ENOENT:
-                    status = utils.PluginStatusCode.CRITICAL
-                else:
-                    status = utils.PluginStatusCode.UNKNOWN
-                    msg = "UNKNOWN: Brick %s: %s" % (brickPath, str(e))
-            finally:
-                if status == utils.PluginStatusCode.OK:
-                    msg = "OK: Brick %s" % brickPath
-                elif status != utils.PluginStatusCode.UNKNOWN:
-                    msg = "CRITICAL: Brick %s is down" % brickPath
-                bricks[brickService] = [status, msg]
+            bricks[brickService] = [status, msg]
     return bricks
-
-
-def getNfsStatus(volInfo):
-    # if nfs is already running we need not to check further
-    status, msg, error = utils.execCmd(_checkNfsCmd)
-    if status == utils.PluginStatusCode.OK:
-        return status, msg[0] if len(msg) > 0 else ""
-
-    # if nfs is not running and any of the volume uses nfs
-    # then its required to alert the user
-    for volume, volumeInfo in volInfo.iteritems():
-        if volumeInfo['volumeStatus'] == glustercli.VolumeStatus.OFFLINE:
-            continue
-        nfsStatus = volumeInfo.get('options', {}).get('nfs.disable', 'off')
-        if nfsStatus == 'off':
-            msg = "CRITICAL: Process glusterfs-nfs is not running"
-            status = utils.PluginStatusCode.CRITICAL
-            break
-    else:
-        msg = "OK: No gluster volume uses nfs"
-        status = utils.PluginStatusCode.OK
-    return status, msg
-
-
-def getCtdbStatus(smbStatus, nfsStatus):
-    if smbStatus != utils.PluginStatusCode.OK and \
-       nfsStatus != utils.PluginStatusCode.OK:
-        return (utils.PluginStatusCode.OK,
-                "CTDB ignored as SMB and NFS are not running")
-
-    status, msg, error = utils.execCmd(_checkCtdbCmd)
-    if status != utils.PluginStatusCode.OK:
-        return utils.PluginStatusCode.UNKNOWN, "CTDB not configured"
-
-    # CTDB, SMB/NFS are running
-    status, msg, error = utils.execCmd(['ctdb', 'nodestatus'])
-    if status == utils.PluginStatusCode.OK:
-        if len(msg) > -1:
-            message = msg[0].split()
-            if len(message) > 1:
-                msg = "Node status: %s" % message[2]
-                if message[2] == 'UNHEALTHY':
-                    status = utils.PluginStatusCode.WARNING
-                elif message[2] in ['DISCONNECTED', 'BANNED', 'INACTIVE']:
-                    status = utils.PluginStatusCode.CRITICAL
-                else:
-                    status = utils.PluginStatusCode.UNKNOWN
-    return status, msg
-
-
-def getSmbStatus(volInfo):
-    status, msg, error = utils.execCmd(_checkSmbCmd)
-    if status == utils.PluginStatusCode.OK:
-        return status, msg[0] if len(msg) > 0 else ""
-
-    # if smb is not running and any of the volume uses smb
-    # then its required to alert the user
-    for k, v in volInfo.iteritems():
-        cifsStatus = v.get('options', {}).get('user.cifs', 'enable')
-        smbStatus = v.get('options', {}).get('user.smb', 'enable')
-        if cifsStatus == 'enable' and smbStatus == 'enable':
-            msg = "CRITICAL: Process smb is not running"
-            status = utils.PluginStatusCode.CRITICAL
-            break
-    else:
-        msg = "OK: No gluster volume uses smb"
-        status = utils.PluginStatusCode.OK
-    return status, msg
-
-
-def getQuotadStatus(volInfo):
-    # if quota is already running we need not to check further
-    status, msg, error = utils.execCmd(_checkQuotaCmd)
-    if status == utils.PluginStatusCode.OK:
-        return status, msg[0] if len(msg) > 0 else ""
-
-    # if quota is not running and any of the volume uses quota
-    # then the quotad process should be running in the host
-    for k, v in volInfo.iteritems():
-        quotadStatus = v.get('options', {}).get('features.quota', '')
-        if quotadStatus == 'on':
-            msg = "CRITICAL: Process quotad is not running"
-            utils.PluginStatusCode.CRITICAL
-            break
-    else:
-        msg = "OK: Quota not enabled"
-        status = utils.PluginStatusCode.OK
-    return status, msg
-
-
-def getShdStatus(volInfo):
-    status, msg, error = utils.execCmd(_checkShdCmd)
-    if status == utils.PluginStatusCode.OK:
-        return status, msg[0] if len(msg) > 0 else ""
-
-    hostUuid = glustercli.hostUUIDGet()
-    for volumeName, volumeInfo in volInfo.iteritems():
-        if volumeInfo['volumeStatus'] == glustercli.VolumeStatus.OFFLINE:
-            continue
-        if hasBricks(hostUuid, volumeInfo['bricksInfo']) and \
-           int(volumeInfo['replicaCount']) > 1:
-            status = utils.PluginStatusCode.CRITICAL
-            msg = "CRITICAL: Gluster Self Heal Daemon not running"
-            break
-    else:
-        msg = "OK: Process Gluster Self Heal Daemon"
-        status = utils.PluginStatusCode.OK
-    return status, msg
-
-
-def hasBricks(hostUuid, bricks):
-    for brick in bricks:
-        if brick['hostUuid'] == hostUuid:
-            return True
-    return False
 
 
 class App():
@@ -244,11 +83,10 @@ class App():
                     logger.warn("Hostname is not configured")
                     time.sleep(sleepTime)
                     continue
-            status, msg, error = utils.execCmd(_checkGlusterdCmd)
+            status, msg = check_proc_util.getGlusterdStatus()
             if status != glusterdStatus or \
                     status == utils.PluginStatusCode.CRITICAL:
                 glusterdStatus = status
-                msg = msg[0] if len(msg) > 0 else ""
                 nscautils.send_to_nsca(hostName, _glusterdService, status, msg)
 
             # Get the volume status only if glusterfs is running to avoid
@@ -265,31 +103,31 @@ class App():
                 time.sleep(sleepTime)
                 continue
 
-            status, msg = getNfsStatus(volInfo)
+            status, msg = check_proc_util.getNfsStatus(volInfo)
             if status != nfsStatus or \
                     status == utils.PluginStatusCode.CRITICAL:
                 nfsStatus = status
                 nscautils.send_to_nsca(hostName, _nfsService, status, msg)
 
-            status, msg = getSmbStatus(volInfo)
+            status, msg = check_proc_util.getSmbStatus(volInfo)
             if status != smbStatus or \
                     status == utils.PluginStatusCode.CRITICAL:
                 smbStatus = status
                 nscautils.send_to_nsca(hostName, _smbService, status, msg)
 
-            status, msg = getCtdbStatus(smbStatus, nfsStatus)
+            status, msg = check_proc_util.getCtdbStatus(smbStatus, nfsStatus)
             if status != ctdbStatus or \
                     status == utils.PluginStatusCode.CRITICAL:
                 ctdbStatus = status
                 nscautils.send_to_nsca(hostName, _ctdbdService, status, msg)
 
-            status, msg = getShdStatus(volInfo)
+            status, msg = check_proc_util.getShdStatus(volInfo)
             if status != shdStatus or \
                     status == utils.PluginStatusCode.CRITICAL:
                 shdStatus = status
                 nscautils.send_to_nsca(hostName, _shdService, status, msg)
 
-            status, msg = getQuotadStatus(volInfo)
+            status, msg = check_proc_util.getQuotadStatus(volInfo)
             if status != quotaStatus or \
                     status == utils.PluginStatusCode.CRITICAL:
                 quotaStatus = status

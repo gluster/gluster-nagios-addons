@@ -144,6 +144,8 @@ command[check_interfaces]=%{_libdir}/nagios/plugins/gluster/network.py -e lo -e 
 command[check_brick_usage]=%{_libdir}/nagios/plugins/gluster/check_disk_and_inode.py -w 80 -c 90 -u MB -n -i \$ARG1\$
 command[check_vol_utilization]=sudo %{_libdir}/nagios/plugins/gluster/check_vol_utilization.py \$ARG1\$ -w \$ARG2\$ -c \$ARG3\$
 command[check_vol_status]=sudo %{_libdir}/nagios/plugins/gluster/check_volume_status.py -v \$ARG1\$ -t \$ARG2\$
+command[check_proc_status]=sudo %{_libdir}/nagios/plugins/gluster/check_gluster_proc_status.py -t \$ARG1\$
+command[check_brick_status]=sudo %{_libdir}/nagios/plugins/gluster/check_gluster_proc_status.py -t BRICK -v \$ARG1\$ -b \$ARG2\$
 ###Auto Discovery related
 command[discoverpeers]=sudo %{_libdir}/nagios/plugins/gluster/discoverpeers.py
 command[discover_volume_list]=sudo %{_libdir}/nagios/plugins/gluster/discover_volumes.py -l

@@ -24,6 +24,8 @@ dist_glusternagiosplugins_PYTHON = \
 	discover_volumes.py \
 	discoverhostparams.py \
 	configure_gluster_node.py \
+	check_gluster_proc_status.py \
+	check_proc_util.py \
 	__init__.py \
 	memory.py \
 	network.py \
