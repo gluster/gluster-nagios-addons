@@ -48,7 +48,7 @@ _checkCtdbCmd = [_checkProc.cmd, "-c", "1:", "-C", "ctdbd"]
 _nfsService = "NFS"
 _shdService = "Self-Heal"
 _smbService = "CIFS"
-_brickService = "Brick - "
+_brickService = "Brick - %s"
 _glusterdService = "Gluster Management"
 _quotadService = "Quota"
 _ctdbdService = "CTDB"
@@ -67,7 +67,7 @@ def getBrickStatus(volInfo):
             if brick.get('hostUuid') != hostUuid:
                 continue
             brickPath = brick['name'].split(':')[1]
-            brickService = "Brick Status - %s" % brickPath
+            brickService = _brickService % brickPath
             pidFile = brick['name'].replace(
                 ":/", "-").replace("/", "-") + ".pid"
             try:
