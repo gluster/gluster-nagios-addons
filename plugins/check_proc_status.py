@@ -32,7 +32,7 @@ from glusternagios import glustercli
 
 _nfsService = "NFS"
 _shdService = "Self-Heal"
-_smbService = "CIFS"
+_smbService = "SMB"
 _brickService = "Brick - %s"
 _glusterdService = "Gluster Management"
 _quotadService = "Quota"

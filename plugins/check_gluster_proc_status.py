@@ -24,7 +24,7 @@ from glusternagios import glustercli
 
 
 _NFS = "NFS"
-_SMB = "CIFS"
+_SMB = "SMB"
 _CTDB = "CTDB"
 _SHD = "SHD"
 _QUOTA = "QUOTA"
