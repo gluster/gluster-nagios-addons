@@ -116,10 +116,10 @@ def getVolumeGeoRepStatus(args):
         if (volume[args.volume]['status'] ==
                 glustercli.GeoRepStatus.PARTIAL_FAULTY):
             exitstatus = utils.PluginStatusCode.WARNING
-            message = "Partially faulty - %s" % volume[args.volume]['detail']
+            message = "Partially faulty\n %s" % volume[args.volume]['detail']
         elif volume[args.volume]['status'] == glustercli.GeoRepStatus.FAULTY:
             exitstatus = utils.PluginStatusCode.CRITICAL
-            message = "Faulty - %s" % volume[args.volume]['detail']
+            message = "Faulty\n %s" % volume[args.volume]['detail']
         elif (volume[args.volume]['status'] ==
               glustercli.GeoRepStatus.NOT_STARTED):
             exitstatus = utils.PluginStatusCode.WARNING
