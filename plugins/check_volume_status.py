@@ -55,7 +55,7 @@ def getVolumeQuotaStatus(args):
         return utils.PluginStatusCode.UNKNOWN, out
 
     returnMsg = "QUOTA:"
-    if qstatus.get("hard_ex_dirs") is not None:
+    if qstatus.get("hard_ex_dirs"):
         hard_limit_ex = ', '.join(qstatus['hard_ex_dirs'])
         returnMsg += ("hard limit exceeded on %s; " % hard_limit_ex)
     if qstatus.get('soft_ex_dirs'):

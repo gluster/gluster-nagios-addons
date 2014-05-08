@@ -37,13 +37,6 @@ def findVolName(pattern):
     return pattern[pattern.find('-') + 1:pattern.rfind('-')]
 
 
-def getStatusCode(alertlevel):
-    if alertlevel == 'ALERT':
-        return utils.PluginStatusCode.CRITICAL
-    else:
-        return utils.PluginStatusCode.WARNING
-
-
 def processQuotaMsg(msg, alertlevel):
     quotapat = re.compile(r'\b\d*-[a-zA-Z0-9_-]*-quota\b')
     matches = quotapat.search(msg)
@@ -55,7 +48,7 @@ def processQuotaMsg(msg, alertlevel):
         serviceName = nscautils.vol_service_name(volname, "Quota")
         nscautils.send_to_nsca_subproc(nscautils.getNagiosClusterName(),
                                        serviceName,
-                                       getStatusCode(alertlevel),
+                                       utils.PluginStatusCode.WARNING,
                                        alertMsg)
 
 
