@@ -27,8 +27,9 @@ def showVolumeUtilization(vname, warnLevel, critLevel):
     buf = {}
     try:
         buf = capacity.statvfs(vname, "localhost")
-    except Exception as e:
-        sys.stdout.write(("Volume Utilization UNKNOWN: %s\n" % str(e)))
+    except Exception:
+        sys.stdout.write("UNKNOWN: Failed to get the "
+                         "Volume Utilization Data\n")
         sys.exit(utils.PluginStatusCode.UNKNOWN)
 #    print buf
 
@@ -60,17 +61,17 @@ def showVolumeUtilization(vname, warnLevel, critLevel):
 
     if int(vol_utilization) > critLevel:
         sys.stdout.write(
-            ("Volume Utilization CRITICAL: Utilization:%s%%"
+            ("CRITICAL: Utilization:%s%%"
              "| %s\n" % (str(int(vol_utilization)), " ".join(perfLines))))
         sys.exit(utils.PluginStatusCode.CRITICAL)
     elif int(vol_utilization) > warnLevel:
         sys.stdout.write(
-            ("Volume Utilization WARNING: Utilization:%s%%"
+            ("WARNING: Utilization:%s%%"
              "| %s\n" % (str(int(vol_utilization)), " ".join(perfLines))))
         sys.exit(utils.PluginStatusCode.WARNING)
     else:
         sys.stdout.write(
-            ("Volume Utilization OK: Utilization:%s%%"
+            ("OK: Utilization:%s%%"
              "| %s\n" % (str(int(vol_utilization)), " ".join(perfLines))))
         sys.exit(utils.PluginStatusCode.OK)
 
