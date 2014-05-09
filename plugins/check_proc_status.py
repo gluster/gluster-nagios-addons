@@ -58,6 +58,20 @@ def getBrickStatus(volInfo):
     return bricks
 
 
+class Status():
+    def __init__(self, code=None, message=None):
+        self.code = code
+        self.message = message
+
+    def isStatusChanged(self, code, message):
+        if (self.code, self.message) != (code, message) or \
+           code == utils.PluginStatusCode.CRITICAL:
+            self.code = code
+            self.message = message
+            return True
+        return False
+
+
 class App():
     def __init__(self):
         self.stdin_path = '/dev/null'
@@ -69,12 +83,12 @@ class App():
     def run(self):
         hostName = nscautils.getCurrentHostNameInNagiosServer()
         sleepTime = int(nscautils.getProcessMonitorSleepTime())
-        glusterdStatus = None
-        nfsStatus = None
-        smbStatus = None
-        shdStatus = None
-        quotaStatus = None
-        ctdbStatus = None
+        glusterdStatus = Status()
+        nfsStatus = Status()
+        smbStatus = Status()
+        shdStatus = Status()
+        quotaStatus = Status()
+        ctdbStatus = Status()
         brickStatus = {}
         while True:
             if not hostName:
@@ -84,9 +98,7 @@ class App():
                     time.sleep(sleepTime)
                     continue
             status, msg = check_proc_util.getGlusterdStatus()
-            if status != glusterdStatus or \
-                    status == utils.PluginStatusCode.CRITICAL:
-                glusterdStatus = status
+            if glusterdStatus.isStatusChanged(status, msg):
                 nscautils.send_to_nsca(hostName, _glusterdService, status, msg)
 
             # Get the volume status only if glusterfs is running to avoid
@@ -104,39 +116,29 @@ class App():
                 continue
 
             status, msg = check_proc_util.getNfsStatus(volInfo)
-            if status != nfsStatus or \
-                    status == utils.PluginStatusCode.CRITICAL:
-                nfsStatus = status
+            if nfsStatus.isStatusChanged(status, msg):
                 nscautils.send_to_nsca(hostName, _nfsService, status, msg)
 
             status, msg = check_proc_util.getSmbStatus(volInfo)
-            if status != smbStatus or \
-                    status == utils.PluginStatusCode.CRITICAL:
-                smbStatus = status
+            if smbStatus.isStatusChanged(status, msg):
                 nscautils.send_to_nsca(hostName, _smbService, status, msg)
 
             status, msg = check_proc_util.getCtdbStatus(smbStatus, nfsStatus)
-            if status != ctdbStatus or \
-                    status == utils.PluginStatusCode.CRITICAL:
-                ctdbStatus = status
+            if ctdbStatus.isStatusChanged(status, msg):
                 nscautils.send_to_nsca(hostName, _ctdbdService, status, msg)
 
             status, msg = check_proc_util.getShdStatus(volInfo)
-            if status != shdStatus or \
-                    status == utils.PluginStatusCode.CRITICAL:
-                shdStatus = status
+            if shdStatus.isStatusChanged(status, msg):
                 nscautils.send_to_nsca(hostName, _shdService, status, msg)
 
             status, msg = check_proc_util.getQuotadStatus(volInfo)
-            if status != quotaStatus or \
-                    status == utils.PluginStatusCode.CRITICAL:
-                quotaStatus = status
+            if quotaStatus.isStatusChanged(status, msg):
                 nscautils.send_to_nsca(hostName, _quotadService, status, msg)
 
             brick = getBrickStatus(volInfo)
             # brickInfo contains status, and message
             for brickService, brickInfo in brick.iteritems():
-                if brickInfo[0] != brickStatus.get(brickService, [None])[0] \
+                if brickInfo != brickStatus.get(brickService, [None]) \
                    or brickInfo[0] == utils.PluginStatusCode.CRITICAL:
                     brickStatus[brickService] = brickInfo
                     nscautils.send_to_nsca(hostName, brickService,
