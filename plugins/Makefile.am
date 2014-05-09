@@ -16,7 +16,6 @@ dist_glusternagiosplugins_PYTHON = \
 	check_disk_and_inode.py \
 	check_gluster_syslog.py \
 	check_vol_utilization.py \
-	check_vol_status.py \
 	check_volume_status.py \
 	check_proc_status.py \
 	cpu.py \
