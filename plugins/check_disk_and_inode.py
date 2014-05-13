@@ -169,24 +169,24 @@ def showDiskUsage(warn, crit, mountPaths, toListInode, usage=False,
             if disk['usePcent'] >= crit:
                 critList.append(
                     "crit:disk:%s;%s;%s%%" % (disk['fs'],
-                                            disk['path'],
-                                            disk['usePcent']))
+                                              disk['path'],
+                                              disk['usePcent']))
             else:
                 critList.append("crit:inode:%s;%s;%s%%" % (inode['fs'],
-                                                         inode['path'],
-                                                         inode['usePcent']))
+                                                           inode['path'],
+                                                           inode['usePcent']))
             if not level > utils.PluginStatusCode.WARNING:
                 level = utils.PluginStatusCode.CRITICAL
         elif (disk['usePcent'] >= warn and disk['usePcent'] < crit) or (
                 inode['usePcent'] >= warn and inode['usePcent'] < crit):
             if disk['usePcent'] >= warn:
                 warnList.append("warn:disk:%s;%s;%s%%" % (disk['fs'],
-                                                        disk['path'],
-                                                        disk['usePcent']))
+                                                          disk['path'],
+                                                          disk['usePcent']))
             else:
                 warnList.append("warn:inode:%s;%s;%s%%" % (inode['fs'],
-                                                         inode['path'],
-                                                         inode['usePcent']))
+                                                           inode['path'],
+                                                           inode['usePcent']))
             if not level > utils.PluginStatusCode.OK:
                 level = utils.PluginStatusCode.WARNING
         else:
