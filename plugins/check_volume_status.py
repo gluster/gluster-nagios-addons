@@ -95,7 +95,7 @@ def getVolumeSelfHealStatus(args):
             message = "No unsynced entries present"
         elif (volume[args.volume]['status'] == glustercli.
                 VolumeSplitBrainStatus.SPLITBRAIN):
-            exitstatus = utils.PluginStatusCode.CRITICAL
+            exitstatus = utils.PluginStatusCode.WARNING
             message = ("Unsynced entries present %s"
                        % (volume[args.volume]['unsyncedentries']))
     return exitstatus, message
