@@ -118,6 +118,8 @@ def getCtdbStatus(smbStatus, nfsStatus):
                     status = utils.PluginStatusCode.WARNING
                 elif message[2] in ['DISCONNECTED', 'BANNED', 'INACTIVE']:
                     status = utils.PluginStatusCode.CRITICAL
+                elif message[2] == 'OK':
+                    status = utils.PluginStatusCode.OK
                 else:
                     status = utils.PluginStatusCode.UNKNOWN
     return status, msg
