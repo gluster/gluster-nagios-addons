@@ -42,6 +42,13 @@ checkIdeSmartCmdPath = utils.CommandPath(
     'check_ide_smart', '/usr/lib64/nagios/plugins/check_ide_smart')
 
 
+class CtdbNodeStatus:
+    OK = 'OK'
+    UNHEALTHY = 'UNHEALTHY'
+    PARTIALLYONLINE = 'PARTIALLYONLINE'
+    DISABLED = 'DISABLED'
+
+
 def getBrickStatus(volumeName, brickName):
     status = None
     brickPath = brickName.split(':')[1]
@@ -98,6 +105,7 @@ def getNfsStatus(volInfo):
 
 
 def getCtdbStatus(smbStatus, nfsStatus):
+    # If SMB/NFS is not running, then skip ctdb check
     if smbStatus != utils.PluginStatusCode.OK and \
        nfsStatus != utils.PluginStatusCode.OK:
         return (utils.PluginStatusCode.OK,
@@ -107,21 +115,34 @@ def getCtdbStatus(smbStatus, nfsStatus):
     if status != utils.PluginStatusCode.OK:
         return utils.PluginStatusCode.UNKNOWN, "CTDB not configured"
 
-    # CTDB, SMB/NFS are running
+    # 'cdtb nodestatus' command will return the output in following format
+    #
+    # pnn:0 host_ip_address     OK (THIS NODE)
+    #
+    # Possible states are -
+    # Ok,Disconnected,Banned,Disabled,Unhealthy,Stopped,Inactive,
+    # PartiallyOnline
+    # And combinations of them like
+    # pnn:0 host_ip_address     BANNED|INACTIVE(THIS NODE)
+    #
+    # UNHEALTHY/DISABLED/PARTIALLYONLINE - node is partially operational
+    # Any other state - node in not operational
     status, msg, error = utils.execCmd(['ctdb', 'nodestatus'])
-    if status == utils.PluginStatusCode.OK:
-        if len(msg) > -1:
+
+    if len(msg) > 0:
             message = msg[0].split()
-            if len(message) > 1:
+            if len(message) >= 2:
                 msg = "Node status: %s" % message[2]
-                if message[2] == 'UNHEALTHY':
-                    status = utils.PluginStatusCode.WARNING
-                elif message[2] in ['DISCONNECTED', 'BANNED', 'INACTIVE']:
-                    status = utils.PluginStatusCode.CRITICAL
-                elif message[2] == 'OK':
+                if CtdbNodeStatus.OK in message[2]:
                     status = utils.PluginStatusCode.OK
+                elif (CtdbNodeStatus.UNHEALTHY in message[2] or
+                      CtdbNodeStatus.PARTIALLYONLINE in message[2] or
+                      CtdbNodeStatus.DISABLED in message[2]):
+                    status = utils.PluginStatusCode.WARNING
                 else:
-                    status = utils.PluginStatusCode.UNKNOWN
+                    status = utils.PluginStatusCode.CRITICAL
+    else:
+        status = utils.PluginStatusCode.UNKNOWN
     return status, msg
 
 
