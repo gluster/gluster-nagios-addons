@@ -65,12 +65,12 @@ def sadfExecCmd(sadfCmd):
         raise SadfCmdExecFailedException(err=[str(e)])
 
     if rc != 0:
-        raise SadfCmdExecFailedException(rc, out, err)
+        raise SadfCmdExecFailedException(rc, [out], [err])
 
     try:
         return etree.fromstring(out)
     except _etreeExceptions:
-        raise SadfXmlErrorException(err=out)
+        raise SadfXmlErrorException(err=[out])
 
 
 def utcnow():
