@@ -45,14 +45,16 @@ def getBrickStatus(volInfo):
     bricks = {}
     hostUuid = glustercli.hostUUIDGet()
     for volumeName, volumeInfo in volInfo.iteritems():
-        if volumeInfo['volumeStatus'] == glustercli.VolumeStatus.OFFLINE:
-            continue
         for brick in volumeInfo['bricksInfo']:
             if brick.get('hostUuid') != hostUuid:
                 continue
-            status, msg = check_proc_util.getBrickStatus(volumeName,
-                                                         brick['name'])
             brickPath = brick['name'].split(':')[1]
+            if volumeInfo['volumeStatus'] == glustercli.VolumeStatus.OFFLINE:
+                status = utils.PluginStatusCode.CRITICAL
+                msg = "CRITICAL: Brick %s is down" % brickPath
+            else:
+                status, msg = check_proc_util.getBrickStatus(volumeName,
+                                                             brick['name'])
             brickService = _brickService % brickPath
             bricks[brickService] = [status, msg]
     return bricks
