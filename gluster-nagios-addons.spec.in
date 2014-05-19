@@ -31,6 +31,9 @@
 %define _init_stop()    /sbin/service %1 stop &>/dev/null ;
 %define _init_install() install -D -p -m 0755 %1 %{buildroot}%{_sysconfdir}/init.d/%2 ;
 %endif
+%define _start_conf_section() ### START - configuration section for gluster nrpe plugins ###
+%define _end_conf_section() ### END - configuration section for gluster nrpe plugins ###
+%define _remove_gluster_nagios_configs() /bin/sed -i -e "/%{_start_conf_section}/,/%{_end_conf_section}/d" %{_sysconfdir}/nagios/nrpe.cfg ;
 
 Summary: Gluster node management add-ons for Nagios
 Name:             @PACKAGE_NAME@
@@ -134,8 +137,10 @@ if grep -q "dont_blame_nrpe=0" %{_sysconfdir}/nagios/nrpe.cfg ; then
   sed -i -e 's/dont_blame_nrpe=0/dont_blame_nrpe=1/g' %{_sysconfdir}/nagios/nrpe.cfg
 fi
 
+%_remove_gluster_nagios_configs
+
 cat >> %{_sysconfdir}/nagios/nrpe.cfg <<EOF
-### gluster nrpe plugins ###
+%{_start_conf_section}
 command[check_disk_and_inode]=%{_libdir}/nagios/plugins/gluster/check_disk_and_inode.py -w 80 -c 90 -l -i /boot -i /var -i /root -n --inode
 command[check_memory]=%{_libdir}/nagios/plugins/gluster/memory.py -w 80 -c 90
 command[check_swap_usage]=%{_libdir}/nagios/plugins/gluster/swap.py -w 80 -c 90
@@ -146,12 +151,12 @@ command[check_vol_utilization]=sudo %{_libdir}/nagios/plugins/gluster/check_vol_
 command[check_vol_status]=sudo %{_libdir}/nagios/plugins/gluster/check_volume_status.py -v \$ARG1\$ -t \$ARG2\$
 command[check_proc_status]=sudo %{_libdir}/nagios/plugins/gluster/check_gluster_proc_status.py -t \$ARG1\$
 command[check_brick_status]=sudo %{_libdir}/nagios/plugins/gluster/check_gluster_proc_status.py -t BRICK -v \$ARG1\$ -b \$ARG2\$
-###Auto Discovery related
 command[discoverpeers]=sudo %{_libdir}/nagios/plugins/gluster/discoverpeers.py
 command[discover_volume_list]=sudo %{_libdir}/nagios/plugins/gluster/discover_volumes.py -l
 command[discover_volume_info]=sudo %{_libdir}/nagios/plugins/gluster/discover_volumes.py -v \$ARG1\$
 command[discoverhostparams]=sudo %{_libdir}/nagios/plugins/gluster/discoverhostparams.py
 command[configure_gluster_node]=sudo %{_libdir}/nagios/plugins/gluster/configure_gluster_node.py -c \$ARG1\$ -n \$ARG2\$ -H \$ARG3\$
+%{_end_conf_section}
 EOF
 %_init_enable nrpe
 %_init_enable glusterpmd
@@ -160,16 +165,12 @@ EOF
 %_init_restart glusterpmd
 
 %preun
-%_init_disable glusterpmd
-%_init_stop glusterpmd
-sed -i '/gluster nrpe plugins/d' %{_sysconfdir}/nagios/nrpe.cfg
-sed -i '/check_disk_and_inode/d' %{_sysconfdir}/nagios/nrpe.cfg
-sed -i '/check_memory/d' %{_sysconfdir}/nagios/nrpe.cfg
-sed -i '/check_swap_usage/d' %{_sysconfdir}/nagios/nrpe.cfg
-sed -i '/sadf.py/d' %{_sysconfdir}/nagios/nrpe.cfg
-sed -i '/check_cpu_multicore.py/d' %{_sysconfdir}/nagios/nrpe.cfg
-sed -i '/check_vol_status/d' %{_sysconfdir}/nagios/nrpe.cfg
-sed -i '/check_vol_quota_status/d' %{_sysconfdir}/nagios/nrpe.cfg
+if [ "$1" -eq 0 ]; then
+        %_init_disable glusterpmd
+        %_init_stop glusterpmd
+        %_remove_gluster_nagios_configs
+
+fi
 
 %files
 %defattr(-,root,root,-)
