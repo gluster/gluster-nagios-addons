@@ -1,1 +1,4 @@
+# This job is added to collect data two times during the last minute of the day.
+# Because of which we get a record for time 00:00:01
+59 23 * * * root /usr/lib64/sa/sa1 60 2
 */1 * * * * root /usr/lib64/sa/sa1 1 1
