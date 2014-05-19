@@ -61,7 +61,7 @@ class TestCheckVolumeStatus(TestCaseBase):
         exitStatusCode, exitStatusMsg = (check_volume_status
                                          .getVolumeQuotaStatus(args))
         assert exitStatusCode == utils.PluginStatusCode.CRITICAL
-        self.assertEqual("QUOTA:hard limit exceeded on dir1, dir2; "
+        self.assertEqual("QUOTA:hard limit reached on dir1, dir2; "
                          "soft limit exceeded on dir3", exitStatusMsg)
         mock_volumeQuotaStatus.return_value = _getQuotaStatusOk()
         exitStatusCode, exitStatusMsg = (check_volume_status

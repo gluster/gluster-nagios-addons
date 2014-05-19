@@ -57,10 +57,12 @@ def getVolumeQuotaStatus(args):
     returnMsg = "QUOTA:"
     if qstatus.get("hard_ex_dirs"):
         hard_limit_ex = ', '.join(qstatus['hard_ex_dirs'])
-        returnMsg += ("hard limit exceeded on %s; " % hard_limit_ex)
+        returnMsg += ("hard limit reached on %s; " % hard_limit_ex)
     if qstatus.get('soft_ex_dirs'):
         soft_limit_ex = ', '.join(qstatus['soft_ex_dirs'])
         returnMsg += ("soft limit exceeded on %s" % soft_limit_ex)
+    if (returnMsg.endswith(';')):
+        returnMsg = returnMsg[:-1]
 
     if qstatus['status'] == glustercli.VolumeQuotaStatus.SOFT_LIMIT_EXCEEDED:
         return utils.PluginStatusCode.WARNING, returnMsg
