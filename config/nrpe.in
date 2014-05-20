@@ -1,0 +1,12 @@
+Cmnd_Alias NRPE_PATHS = @sbindir@/send_nsca, \
+    @libdir@/nagios/plugins/gluster/check_vol_utilization.py, \
+    @libdir@/nagios/plugins/gluster/check_volume_status.py, \
+    @libdir@/nagios/plugins/gluster/check_gluster_proc_status.py, \
+    @libdir@/nagios/plugins/gluster/discoverpeers.py, \
+    @libdir@/nagios/plugins/gluster/discover_volumes.py, \
+    @libdir@/nagios/plugins/gluster/discoverhostparams.py, \
+    @libdir@/nagios/plugins/gluster/configure_gluster_node.py
+
+nrpe  ALL=(ALL) NOPASSWD: NRPE_PATHS
+Defaults:nrpe !requiretty
+

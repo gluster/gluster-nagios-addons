@@ -97,6 +97,7 @@ AC_CONFIG_FILES([
 	gluster-nagios-addons.spec
 	config/Makefile
 	config/glusternagios.conf
+	config/nrpe
 	plugins/Makefile
 	plugins/nscautils.py
 	plugins/volcap/Makefile
