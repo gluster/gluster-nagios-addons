@@ -76,7 +76,7 @@ def getBrickStatus(volumeName, brickName):
             msg = "UNKNOWN: Brick %s: %s" % (brickPath, str(e))
     finally:
         if status == utils.PluginStatusCode.OK:
-            msg = "OK: Brick %s" % brickPath
+            msg = "OK: Brick %s is up" % brickPath
         elif status == utils.PluginStatusCode.CRITICAL:
             msg = "CRITICAL: Brick %s is down" % brickPath
     return status, msg
