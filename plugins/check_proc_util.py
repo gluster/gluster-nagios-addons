@@ -86,7 +86,7 @@ def getNfsStatus(volInfo):
     # if nfs is already running we need not to check further
     status, msg, error = utils.execCmd(_checkNfsCmd)
     if status == utils.PluginStatusCode.OK:
-        return status, msg[0] if len(msg) > 0 else ""
+        return status, "Process glusterfs-nfs is running"
 
     # if nfs is not running and any of the volume uses nfs
     # then its required to alert the user
@@ -149,7 +149,7 @@ def getCtdbStatus(smbStatus, nfsStatus):
 def getSmbStatus(volInfo):
     status, msg, error = utils.execCmd(_checkSmbCmd)
     if status == utils.PluginStatusCode.OK:
-        return status, msg[0] if len(msg) > 0 else ""
+        return status, "Process smb is running"
 
     # if smb is not running and any of the volume uses smb
     # then its required to alert the user
@@ -170,7 +170,7 @@ def getQuotadStatus(volInfo):
     # if quota is already running we need not to check further
     status, msg, error = utils.execCmd(_checkQuotaCmd)
     if status == utils.PluginStatusCode.OK:
-        return status, msg[0] if len(msg) > 0 else ""
+        return status, "Process quotad is running"
 
     # if quota is not running and any of the volume uses quota
     # then the quotad process should be running in the host
@@ -189,7 +189,7 @@ def getQuotadStatus(volInfo):
 def getShdStatus(volInfo):
     status, msg, error = utils.execCmd(_checkShdCmd)
     if status == utils.PluginStatusCode.OK:
-        return status, msg[0] if len(msg) > 0 else ""
+        return status, "Gluster Self Heal Daemon is running"
 
     hostUuid = glustercli.hostUUIDGet()
     for volumeName, volumeInfo in volInfo.iteritems():
@@ -208,8 +208,11 @@ def getShdStatus(volInfo):
 
 def getGlusterdStatus():
     status, msg, error = utils.execCmd(_checkGlusterdCmd)
-    msg = msg[0] if len(msg) > 0 else ""
-    return status, msg
+    if status == utils.PluginStatusCode.OK:
+        return status, "Process glusterd is running"
+    elif status == utils.PluginStatusCode.CRITICAL:
+        return status, "Process glusterd is not running"
+    return status, msg[0] if len(msg) > 0 else ""
 
 
 def hasBricks(hostUuid, bricks):
