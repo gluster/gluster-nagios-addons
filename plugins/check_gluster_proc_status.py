@@ -84,7 +84,7 @@ if __name__ == '__main__':
                 status = utils.PluginStatusCode.CRITICAL
                 msg = "Brick - %s not found" % args.brickPath
     elif args.type != _GLUSTERD:
-        msg = "UNKNOWN: Could not determine %s status " % args.type
+        msg = "UNKNOWN: Brick - %s status could not be determined" % args.brickPath
         status = utils.PluginStatusCode.UNKNOWN
     print msg
     exit(status)
