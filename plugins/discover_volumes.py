@@ -56,6 +56,15 @@ def discoverVolumes(volumeName, list):
         volDict['name'] = key
         volDict['type'] = volume['volumeType']
         if not list:
+            volOptions = volume.get('options')
+            if volOptions:
+                quotaStatus = volOptions.get('features.quota')
+                if quotaStatus == "on":
+                    volDict['quota'] = quotaStatus
+                geoRepStatus = volOptions.get('geo-replication.indexing')
+                if geoRepStatus == "on":
+                    volDict['geo-rep'] = geoRepStatus
+
             volDict['bricks'] = []
             for brick in volume['bricksInfo']:
                 brickproplist = brick['name'].split(':')
