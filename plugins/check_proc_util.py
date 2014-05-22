@@ -154,9 +154,9 @@ def getSmbStatus(volInfo):
     # if smb is not running and any of the volume uses smb
     # then its required to alert the user
     for k, v in volInfo.iteritems():
-        cifsStatus = v.get('options', {}).get('user.cifs', 'disable')
-        smbStatus = v.get('options', {}).get('user.smb', 'disable')
-        if cifsStatus == 'enable' or smbStatus == 'enable':
+        cifsStatus = v.get('options', {}).get('user.cifs', 'enable')
+        smbStatus = v.get('options', {}).get('user.smb', 'enable')
+        if cifsStatus == 'enable' and smbStatus == 'enable':
             msg = "CRITICAL: Process smb is not running"
             status = utils.PluginStatusCode.CRITICAL
             break
