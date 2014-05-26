@@ -116,6 +116,7 @@ def showDiskUsage(warn, crit, mountPaths, toListInode, usage=False,
     diskList = []
     mounts = []
     level = -1
+    msg = ""
 
     for path in mountPaths:
         disk = getDisk(path,
@@ -168,33 +169,36 @@ def showDiskUsage(warn, crit, mountPaths, toListInode, usage=False,
         if disk['usePcent'] >= crit or inode['usePcent'] >= crit:
             if disk['usePcent'] >= crit:
                 critList.append(
-                    "crit:disk:%s;%s;%s%%" % (disk['fs'],
-                                              disk['path'],
-                                              disk['usePcent']))
+                    "disk:%s;%s;%s%%" % (disk['fs'],
+                                         disk['path'],
+                                         disk['usePcent']))
             else:
-                critList.append("crit:inode:%s;%s;%s%%" % (inode['fs'],
-                                                           inode['path'],
-                                                           inode['usePcent']))
+                critList.append("inode:%s;%s;%s%%" % (inode['fs'],
+                                                      inode['path'],
+                                                      inode['usePcent']))
             if not level > utils.PluginStatusCode.WARNING:
                 level = utils.PluginStatusCode.CRITICAL
         elif (disk['usePcent'] >= warn and disk['usePcent'] < crit) or (
                 inode['usePcent'] >= warn and inode['usePcent'] < crit):
             if disk['usePcent'] >= warn:
-                warnList.append("warn:disk:%s;%s;%s%%" % (disk['fs'],
-                                                          disk['path'],
-                                                          disk['usePcent']))
+                warnList.append("disk:%s;%s;%s%%" % (disk['fs'],
+                                                     disk['path'],
+                                                     disk['usePcent']))
             else:
-                warnList.append("warn:inode:%s;%s;%s%%" % (inode['fs'],
-                                                           inode['path'],
-                                                           inode['usePcent']))
+                warnList.append("inode:%s;%s;%s%%" % (inode['fs'],
+                                                      inode['path'],
+                                                      inode['usePcent']))
             if not level > utils.PluginStatusCode.OK:
                 level = utils.PluginStatusCode.WARNING
         else:
             diskList.append("%s=%s" % (disk['fs'], disk['path']))
 
-    msg = " ".join(critList + warnList)
-    if not msg:
-        msg += " disks:mounts:(" + ",".join(diskList) + ")"
+    if len(critList) > 0:
+        msg += "CRITICAL: " + ",".join(critList) + " "
+    if len(warnList) > 0:
+        msg += "WARNING: " + ",".join(warnList) + " "
+    if len(diskList) > 0:
+        msg += "OK: disks:mounts:(" + ",".join(diskList) + ")"
 
     return level, msg, diskPerf
 
@@ -219,19 +223,16 @@ if __name__ == '__main__':
                                          options.ignore)
 
     if utils.PluginStatusCode.CRITICAL == level:
-        sys.stdout.write("%s : %s | %s\n" % (
-            utils.PluginStatus.CRITICAL,
+        sys.stdout.write("%s | %s\n" % (
             msg,
             " ".join(diskPerf)))
         sys.exit(utils.PluginStatusCode.CRITICAL)
     elif utils.PluginStatusCode.WARNING == level:
-        sys.stdout.write("%s : %s | %s\n" % (
-            utils.PluginStatus.WARNING,
+        sys.stdout.write("%s | %s\n" % (
             msg,
             " ".join(diskPerf)))
         sys.exit(utils.PluginStatusCode.WARNING)
     else:
-        sys.stdout.write("%s : %s | %s\n" % (
-            utils.PluginStatus.OK,
+        sys.stdout.write("%s | %s\n" % (
             msg,
             " ".join(diskPerf)))
