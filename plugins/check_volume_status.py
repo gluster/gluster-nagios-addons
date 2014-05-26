@@ -34,11 +34,13 @@ def getVolumeStatus(args):
         elif volumes[args.volume]["volumeStatus"] == (glustercli.
                                                       VolumeStatus.ONLINE):
             exitstatus = utils.PluginStatusCode.OK
-            message = "OK: Volume is up"
+            message = "OK: Volume : %s type - Volume is up" % \
+                      (volumes[args.volume]["volumeType"])
         elif volumes[args.volume]["volumeStatus"] == (glustercli.
                                                       VolumeStatus.OFFLINE):
             exitstatus = utils.PluginStatusCode.CRITICAL
-            message = "CRITICAL: Volume is stopped"
+            message = "CRITICAL: Volume : %s type is stopped" % \
+                      (volumes[args.volume]["volumeType"])
     except glustercli.GlusterCmdFailedException as e:
         out = ("UNKNOWN: Command execution failed %s" % e.message)
         return utils.PluginStatusCode.UNKNOWN, out

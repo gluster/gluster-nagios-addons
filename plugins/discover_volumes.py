@@ -65,10 +65,12 @@ def discoverVolumes(volumeName, list):
                 if geoRepStatus == "on":
                     volDict['geo-rep'] = geoRepStatus
 
+            volDict['replicaCount'] = volume['replicaCount']
             volDict['bricks'] = []
             for brick in volume['bricksInfo']:
                 brickproplist = brick['name'].split(':')
-                volDict['bricks'].append({'brickpath': brickproplist[1],
+                volDict['bricks'].append({'brickaddress': brickproplist[0],
+                                          'brickpath': brickproplist[1],
                                           'hostUuid': brick['hostUuid']})
         resultlist[key] = volDict
     resultString = json.dumps(resultlist)
