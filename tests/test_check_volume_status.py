@@ -133,5 +133,25 @@ def _getQuotaStatusOk():
 
 
 def _getGeoRepStatus(status):
-    return {'test-vol': {'status': status,
-                         'detail': "rhs3-2.novalocal - faulty;"}}
+    return {'test-vol': {'slaves':
+                         {'10.70.43.68::slave-vol':
+                          {'faulty': 1,
+                           'nodecount': 2,
+                           'notstarted': 0,
+                           'stopped': 0,
+                           'detail': 'rhs3.novalocal:/bricks/b3 '
+                                     '- Passive;'
+                                     'rhs3-2.novalocal:/bricks/b3 '
+                                     '- FAULTY;',
+                           'status': status},
+                          '10.70.43.68::slave-vol2':
+                          {'faulty': 0,
+                           'nodecount': 2,
+                           'notstarted': 2,
+                           'stopped': 0,
+                           'detail': 'rhs3.novalocal:/bricks/b3 '
+                                     '- NOT_STARTED;'
+                                     'rhs3-2.novalocal:/bricks/b3 '
+                                     '- NOT_STARTED;',
+                           'status': "NOT_STARTED"}
+                          }}}

@@ -115,20 +115,24 @@ def getVolumeGeoRepStatus(args):
         exitstatus = utils.PluginStatusCode.UNKNOWN
         message = "UNKNOWN: Volume info not found"
     else:
-        if (volume[args.volume]['status'] ==
-                glustercli.GeoRepStatus.PARTIAL_FAULTY):
-            exitstatus = utils.PluginStatusCode.WARNING
-            message = "Partially faulty\n %s" % volume[args.volume]['detail']
-        elif volume[args.volume]['status'] == glustercli.GeoRepStatus.FAULTY:
-            exitstatus = utils.PluginStatusCode.CRITICAL
-            message = "Faulty\n %s" % volume[args.volume]['detail']
-        elif (volume[args.volume]['status'] ==
-              glustercli.GeoRepStatus.NOT_STARTED):
-            exitstatus = utils.PluginStatusCode.WARNING
-            message = "Not Started"
-        else:
-            exitstatus = utils.PluginStatusCode.OK
-            message = "OK"
+        exitstatus = utils.PluginStatusCode.OK
+        message = "Session status:"
+        detail = "Details:"
+        for slavename, slave_dict in volume[args.volume]['slaves'].iteritems():
+            message += ("%s - %s " % (slavename,
+                                      slave_dict['status']))
+            detail += ("%s - %s " % (slavename,
+                                     slave_dict['detail']))
+            if slave_dict['status'] == glustercli.GeoRepStatus.FAULTY:
+                exitstatus = utils.PluginStatusCode.CRITICAL
+            elif (slave_dict['status']
+                  in [glustercli.GeoRepStatus.PARTIAL_FAULTY,
+                      glustercli.GeoRepStatus.STOPPED,
+                      glustercli.GeoRepStatus.NOT_STARTED]
+                  and exitstatus == utils.PluginStatusCode.OK):
+                exitstatus = utils.PluginStatusCode.WARNING
+        if exitstatus != utils.PluginStatusCode.OK:
+            message += "\n" + detail
     return exitstatus, message
 
 
