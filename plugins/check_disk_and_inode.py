@@ -150,7 +150,7 @@ def showDiskUsage(warn, crit, mountPaths, toListInode, usage=False,
                     crit * inode['used'] / 100,
                     inode['used'])
         else:
-            data = "%s=%.2f;%s;%s;0;%s" % (
+            data = "%s=%.2f%%;%s;%s;0;%s" % (
                 disk['path'],
                 disk['usePcent'],
                 warn,
@@ -158,7 +158,7 @@ def showDiskUsage(warn, crit, mountPaths, toListInode, usage=False,
                 disk['size'])
 
             if toListInode:
-                data += " %s=%.2f;%s;%s;0;%s" % (
+                data += " %s=%.2f%%;%s;%s;0;%s" % (
                     inode['path'],
                     inode['usePcent'],
                     warn,
