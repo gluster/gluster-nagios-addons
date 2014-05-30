@@ -1,4 +1,5 @@
 Cmnd_Alias NRPE_PATHS = @sbindir@/send_nsca, \
+    @libdir@/nagios/plugins/gluster/check_disk_and_inode.py, \
     @libdir@/nagios/plugins/gluster/check_vol_utilization.py, \
     @libdir@/nagios/plugins/gluster/check_volume_status.py, \
     @libdir@/nagios/plugins/gluster/check_gluster_proc_status.py, \

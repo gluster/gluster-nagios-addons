@@ -18,12 +18,16 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import os
 import commands
 from testrunner import PluginsTestCase as TestCaseBase
 from plugins import check_disk_and_inode as checkDisk
 
 
 class TestDisk(TestCaseBase):
+    def mock_osaccess(self, path=None, osflag=None):
+        return True
+
     def mock_getstatusoutput(self, i):
         out = [
             "Filesystem      Size  Used Avail Use% Mounted on",
@@ -78,28 +82,29 @@ class TestDisk(TestCaseBase):
 
     def test_getUsageAndFree(self):
         commands.getstatusoutput = self.mock_getstatusoutput
-        disk = checkDisk.getUsageAndFree(1, True)
+        os.access = self.mock_osaccess
+        disk = checkDisk.getUsageAndFree(1, "", 80, 90, "")
         self.assertEqual(disk['usePcent'], 64)
         self.assertEqual(disk['availPcent'], 36)
         self.assertEqual(disk['used'], 174)
         self.assertEqual(disk['avail'], 102)
         self.assertEqual(disk['path'], '/')
 
-        disk = checkDisk.getUsageAndFree(2, True)
+        disk = checkDisk.getUsageAndFree(2, "", 80, 90, "")
         self.assertEqual(disk['usePcent'], 0)
         self.assertEqual(disk['availPcent'], 100)
         self.assertEqual(disk['used'], 0)
         self.assertEqual(disk['avail'], 3.0)
         self.assertEqual(disk['path'], '/var')
 
-        disk = checkDisk.getUsageAndFree(3, True)
+        disk = checkDisk.getUsageAndFree(3, "", 80, 90, "")
         self.assertEqual(disk['usePcent'], 40)
         self.assertEqual(disk['availPcent'], 60)
         self.assertEqual(disk['used'], 200)
         self.assertEqual(disk['avail'], 100)
         self.assertEqual(disk['path'], '/mnt1')
 
-        disk = checkDisk.getUsageAndFree(4, True)
+        disk = checkDisk.getUsageAndFree(4, "", 80, 90, "")
         self.assertEqual(disk['usePcent'], 85)
         self.assertEqual(disk['availPcent'], 15)
         self.assertEqual(disk['used'], 1774)
@@ -123,65 +128,60 @@ class TestDisk(TestCaseBase):
     def test_diskUsage(self):
         commands.getstatusoutput = self.mock_getstatusoutput
         checkDisk.open = self.mock_open
+        os.access = self.mock_osaccess
         mounts = checkDisk.getMounts("/", [])
 
         self.assertEqual(checkDisk.showDiskUsage(80,
                                                  90,
                                                  [mounts[1]],
                                                  True,
-                                                 usage='BGB',
-                                                 ignoreError=True),
-                         (-1, ' disks:mounts:(/dev/sda1=/)',
-                          ['/=174.0;232.0;261.0;0;290.0 '
-                           '/=174.0;139.2;156.6;0;174.0']))
+                                                 usage='BGB'),
+                         (0, '64.0% used (174.0BGB out of 290.0BGB)\n'
+                          ':mount(s): (/dev/sda1=/)',
+                          ['/=174.0BGB;232.0;261.0;0;290.0 '
+                           '/=174.0;139.2;156.6;0;290.0']))
 
         self.assertEqual(checkDisk.showDiskUsage(80,
                                                  90,
-                                                 [mounts[1]], True,
-                                                 ignoreError=True),
-                         (-1, ' disks:mounts:(/dev/sda1=/)',
-                          ['/=64.00;80;90;0;100 /=64.00;80;90;0;100']))
+                                                 [mounts[1]],
+                                                 True),
+                         (0, '64.0% used (174.0GB out of 290.0GB)\n'
+                          ':mount(s): (/dev/sda1=/)',
+                          ['/=64.00%;80;90;0;290.0GB '
+                           '/=64.00%;80;90;0;290.0']))
 
         self.assertEqual(checkDisk.showDiskUsage(80,
                                                  90,
-                                                 ["/mnt/vol2"], True,
-                                                 ignoreError=True),
-                         (-1, ' disks:mounts:(10.70.43.190:vol2=/mnt/vol2)',
-                          ['/mnt/vol2=47.00;80;90;0;100 '
-                           '/mnt/vol2=47.00;80;90;0;100']))
+                                                 [mounts[1]], True),
+                         (0, '64.0% used (174.0GB out of 290.0GB)\n'
+                          ':mount(s): (/dev/sda1=/)',
+                          ['/=64.00%;80;90;0;290.0GB '
+                           '/=64.00%;80;90;0;290.0']))
 
         self.assertEqual(checkDisk.showDiskUsage(80,
                                                  90,
-                                                 ["/mnt/vol2"], True,
-                                                 usage="MB",
-                                                 ignoreError=True),
-                         (-1, ' disks:mounts:(10.70.43.190:vol2=/mnt/vol2)',
-                          ['/mnt/vol2=23228.0;42276.8;47561.4;0;52846.0 '
-                           '/mnt/vol2=23228.0;18582.4;20905.2;0;23228.0']))
+                                                 ["/mnt/vol2"], True),
+                         (0, '47.0% used (22.68359375TB out of '
+                          '51.607421875TB)\n'
+                          ':mount(s): (10.70.43.190:vol2=/mnt/vol2)',
+                          ['/mnt/vol2=47.00%;80;90;0;52846.0GB '
+                           '/mnt/vol2=47.00%;80;90;0;52846.0']))
 
         self.assertEqual(checkDisk.showDiskUsage(10,
                                                  20,
-                                                 ["/mnt/vol2"], True,
-                                                 usage="MB",
-                                                 ignoreError=True),
-                         (2, 'crit:disk:10.70.43.190:vol2;/mnt/vol2;47.0',
-                          ['/mnt/vol2=23228.0;5284.6;10569.2;0;52846.0 '
-                           '/mnt/vol2=23228.0;2322.8;4645.6;0;23228.0']))
+                                                 ["/mnt/vol2"], True),
+                         (2, '47.0% used (22.68359375TB out of '
+                          '51.607421875TB)\n'
+                          ':mount(s): (10.70.43.190:vol2=/mnt/vol2)',
+                          ['/mnt/vol2=47.00%;10;20;0;52846.0GB '
+                           '/mnt/vol2=47.00%;10;20;0;52846.0']))
 
         # negative test
-        self.assertEqual(checkDisk.showDiskUsage(-1,
-                                                 200,
-                                                 ["/mnt/vol2"], True,
-                                                 usage="MB",
-                                                 ignoreError=True),
-                         (1, 'warn:disk:10.70.43.190:vol2;/mnt/vol2;47.0',
-                          ['/mnt/vol2=23228.0;-528.5;105692.0;0;52846.0 '
-                           '/mnt/vol2=23228.0;-232.3;46456.0;0;23228.0']))
-
-        # testing warning level
-        self.assertEqual(checkDisk.showDiskUsage(40, 50, ["/mnt/vol2"], True,
-                                                 usage="MB",
-                                                 ignoreError=True),
-                         (1, 'warn:disk:10.70.43.190:vol2;/mnt/vol2;47.0',
-                          ['/mnt/vol2=23228.0;21138.4;26423.0;0;52846.0 '
-                           '/mnt/vol2=23228.0;9291.2;11614.0;0;23228.0']))
+        self.assertEqual(checkDisk.showDiskUsage(1,
+                                                 100,
+                                                 ["/mnt/vol2"], True),
+                         (1, '47.0% used (22.68359375TB out of '
+                          '51.607421875TB)\n'
+                          ':mount(s): (10.70.43.190:vol2=/mnt/vol2)',
+                          ['/mnt/vol2=47.00%;1;100;0;52846.0GB '
+                           '/mnt/vol2=47.00%;1;100;0;52846.0']))

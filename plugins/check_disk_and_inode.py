@@ -1,5 +1,4 @@
 #!/usr/bin/python
-# sadf.py -- nagios plugin uses sadf output for perf data
 # Copyright (C) 2014 Red Hat Inc
 #
 # This program is free software; you can redistribute it and/or
@@ -18,6 +17,7 @@
 #
 
 
+import os
 import re
 import sys
 import commands
@@ -26,6 +26,7 @@ from glusternagios import utils
 
 WARNING_LEVEL = 80
 CRITICAL_LEVEL = 90
+INVALID_STATUS_CODE = -1
 
 
 def getVal(val):
@@ -36,18 +37,40 @@ def getVal(val):
         return 0
 
 
-def getUsageAndFree(command, lvm):
-    disk = {'path': None, 'usePercent': None, 'avail': None,
-            'used': None, 'size': None, 'fs': None, 'status': None,
-            'retCode': 0}
+def getUsageAndFree(command, path, crit, warn, lvm):
+    disk = {'path': None, 'usePcent': 0, 'avail': 0,
+            'used': 0, 'size': 0, 'fs': None,
+            'status': None, 'msg': None, 'availPcent': 0,
+            'statusCode': utils.PluginStatusCode.UNKNOWN}
+
+    # Check if device exists and permissions are ok
+    if not os.access(path, os.F_OK):
+        disk['status'] = "Device not found!"
+        disk['msg'] = 'no device'
+        disk['fs'] = path
+        disk['statusCode'] = utils.PluginStatusCode.CRITICAL
+        return disk
+
+    if not os.access(path, os.R_OK):
+        disk['status'] = "Unable to access the device"
+        disk['msg'] = 'no access'
+        disk['fs'] = path
+        disk['statusCode'] = utils.PluginStatusCode.CRITICAL
+        return disk
+
     status = commands.getstatusoutput(command)
+    # Sample output
+    # (0, 'Filesystem     1G-blocks  Used Available Use% Mounted on\n/dev/sda1
+    #       290G  196G       79G  72% /')
     if status[0] != 0:
-        disk['retCode'] = status[0]
+        disk['msg'] = 'error:%s' % status[0]
         if status[0] == 256:
-            disk['status'] = "Brick path not found!"
+            disk['status'] = "Brick/Device path not found!"
         else:
             disk['status'] = status[1]
+        disk['statusCode'] = utils.PluginStatusCode.CRITICAL
         return disk
+
     status = status[1].split()
     disk['path'] = status[-1]
     disk['avail'] = getVal(status[-3])
@@ -55,19 +78,29 @@ def getUsageAndFree(command, lvm):
     disk['size'] = getVal(status[-5])
     disk['fs'] = status[-6]
     disk['usePcent'] = getVal(status[-2])
+    if disk['usePcent'] >= crit:
+        disk['statusCode'] = utils.PluginStatusCode.CRITICAL
+    elif disk['usePcent'] >= warn:
+        disk['statusCode'] = utils.PluginStatusCode.WARNING
+    elif disk['usePcent'] < warn:
+        disk['statusCode'] = utils.PluginStatusCode.OK
     disk['availPcent'] = 100 - disk['usePcent']
+
     return disk
 
 
-def getDisk(path, usage=None, lvm=False):
+def getDisk(path, crit, warn, usage=None, lvm=False):
     if usage:
-        return getUsageAndFree("df -B%s %s" % (usage, path), lvm)
+        return getUsageAndFree("df -B%s %s" % (usage, path),
+                               path, crit, warn, lvm)
     else:
-        return getUsageAndFree("df -BG %s" % path, lvm)
+        return getUsageAndFree("df -BG %s" % path,
+                               path, crit, warn, lvm)
 
 
-def getInode(path, lvm=False):
-    return getUsageAndFree("df -i %s" % path, lvm)
+def getInode(path, crit, warn, lvm=False):
+    return getUsageAndFree("df -i %s" % path,
+                           path, crit, warn, lvm)
 
 
 def getMounts(searchQuery, excludeList=[]):
@@ -117,40 +150,60 @@ def parse_input():
     return parser.parse_args()
 
 
+def _getMsg(okList, warnList, critList):
+    msg = ", ".join(critList)
+    if critList and (warnList or okList):
+        msg = "CRITICAL: " + msg
+    if warnList:
+        if msg:
+            msg += "; WARNING: "
+        msg += ", ".join(warnList)
+    if okList:
+        if msg:
+            msg += "; OK: "
+        msg += ", ".join(okList)
+    return msg
+
+
+def _getUnitAndType(val):
+    unit = utils.convertSize(val, "GB", "TB")
+    if unit >= 1:
+        return unit, "TB"
+    else:
+        return val, "GB"
+
+
 def showDiskUsage(warn, crit, mountPaths, toListInode, usage=False,
                   isLvm=False, ignoreError=False):
     diskPerf = []
     warnList = []
     critList = []
-    diskList = []
+    okList = []
     mounts = []
-    level = -1
-    msg = ""
+    statusCode = INVALID_STATUS_CODE
+    totalUsed = 0
+    totalSize = 0
+    noOfMounts = len(mountPaths)
+    maxPercentUsed = 0
 
     for path in mountPaths:
-        disk = getDisk(path,
-                       usage,
-                       isLvm)
-
-        inode = getInode(path,
-                         isLvm)
-
-        if disk['retCode'] != 0 or inode['retCode'] != 0:
-            return utils.PluginStatusCode.CRITICAL, disk['status'], ""
+        disk = getDisk(path, crit, warn, usage, isLvm)
+        inode = getInode(path, crit, warn, isLvm)
 
         if disk['path'] in mounts:
             continue
         if not disk['used'] or not inode['used']:
-            if ignoreError:
-                continue
-            else:
+            if not ignoreError:
                 sys.exit(utils.PluginStatusCode.UNKNOWN)
 
-        mounts.append(disk['path'])
-        if usage:
-            data = "%s=%.1f;%.1f;%.1f;0;%.1f" % (
+        if disk['path']:
+            mounts.append(disk['path'])
+        data = ""
+        if usage and disk['path']:
+            data = "%s=%.1f%s;%.1f;%.1f;0;%.1f" % (
                 disk['path'],
                 disk['used'],
+                usage,
                 warn * disk['size'] / 100,
                 crit * disk['size'] / 100,
                 disk['size'])
@@ -160,9 +213,9 @@ def showDiskUsage(warn, crit, mountPaths, toListInode, usage=False,
                     inode['used'],
                     warn * inode['used'] / 100,
                     crit * inode['used'] / 100,
-                    inode['used'])
-        else:
-            data = "%s=%.2f%%;%s;%s;0;%s" % (
+                    inode['size'])
+        elif disk['path']:
+            data = "%s=%.2f%%;%s;%s;0;%sGB" % (
                 disk['path'],
                 disk['usePcent'],
                 warn,
@@ -178,41 +231,81 @@ def showDiskUsage(warn, crit, mountPaths, toListInode, usage=False,
                     inode['size'])
         diskPerf.append(data)
 
-        if disk['usePcent'] >= crit or inode['usePcent'] >= crit:
-            if disk['usePcent'] >= crit:
-                critList.append(
-                    "disk:%s;%s;%s%%" % (disk['fs'],
-                                         disk['path'],
-                                         disk['usePcent']))
+        totalUsed += disk['used']
+        totalSize += disk['size']
+        if disk['usePcent'] > maxPercentUsed:
+            maxPercentUsed = disk['usePcent']
+
+        # adding into status message if there is any
+        # specfic status found (short msg for list of disks)
+        msg = ""
+        if disk['status'] and disk['msg']:
+            if noOfMounts == 1:
+                msg = "%s=%s(%s)" % (disk['fs'], disk['path'],
+                                     disk['status'])
             else:
-                critList.append("inode:%s;%s;%s%%" % (inode['fs'],
-                                                      inode['path'],
-                                                      inode['usePcent']))
-            if not level > utils.PluginStatusCode.WARNING:
-                level = utils.PluginStatusCode.CRITICAL
-        elif (disk['usePcent'] >= warn and disk['usePcent'] < crit) or (
-                inode['usePcent'] >= warn and inode['usePcent'] < crit):
-            if disk['usePcent'] >= warn:
-                warnList.append("disk:%s;%s;%s%%" % (disk['fs'],
-                                                     disk['path'],
-                                                     disk['usePcent']))
-            else:
-                warnList.append("inode:%s;%s;%s%%" % (inode['fs'],
-                                                      inode['path'],
-                                                      inode['usePcent']))
-            if not level > utils.PluginStatusCode.OK:
-                level = utils.PluginStatusCode.WARNING
+                msg = "%s(%s)" % (disk['fs'], disk['msg'])
         else:
-            diskList.append("%s=%s" % (disk['fs'], disk['path']))
+            if noOfMounts == 1:
+                msg = "%s=%s" % (disk['fs'], disk['path'])
+            else:
+                msg = "%s" % (disk['path'])
 
-    if len(critList) > 0:
-        msg += "CRITICAL: " + ",".join(critList) + " "
-    if len(warnList) > 0:
-        msg += "WARNING: " + ",".join(warnList) + " "
-    if len(diskList) > 0:
-        msg += "OK: disks:mounts:(" + ",".join(diskList) + ")"
+        if disk['statusCode'] == utils.PluginStatusCode.CRITICAL or \
+           inode['statusCode'] == utils.PluginStatusCode.CRITICAL:
+            statusCode = utils.PluginStatusCode.CRITICAL
+            critList.append(msg)
+        elif (disk['statusCode'] == utils.PluginStatusCode.WARNING or
+              inode['statusCode'] == utils.PluginStatusCode.WARNING):
+            # if any previous disk statusCode is not critical
+            # we should not change the statusCode into warning
+            if statusCode != utils.PluginStatusCode.CRITICAL:
+                statusCode = utils.PluginStatusCode.WARNING
+            # just adding warning values into the list
+            warnList.append(msg)
+        elif disk['statusCode'] == utils.PluginStatusCode.OK:
+            if statusCode == INVALID_STATUS_CODE or \
+               statusCode == utils.PluginStatusCode.OK:
+                statusCode = utils.PluginStatusCode.OK
+            okList.append(msg)
+        else:
+            # added \ to fix E125 pep8 error
+            if statusCode != utils.PluginStatusCode.CRITICAL or \
+               statusCode != utils.PluginStatusCode.WARNING:
+                statusCode = utils.PluginStatusCode.UNKNOWN
+            okList.append(msg)
 
-    return level, msg, diskPerf
+    msg = _getMsg(okList, warnList, critList)
+
+    if totalUsed == 0 and totalSize == 0:
+        # avoid zero div error
+        return statusCode, "mount: %s" % msg, diskPerf
+    if totalUsed == 0:
+        # avoid zero div error
+        totUsagePercent = 0
+    elif len(mounts) > 1:
+        totUsagePercent = totalUsed / totalSize * 100
+    else:
+        totUsagePercent = maxPercentUsed
+    usageMsg = ""
+    if not usage:
+        totUsedSz, totUsedSzUnit = _getUnitAndType(totalUsed)
+        totSpaceSz, totSpaceSzUnit = _getUnitAndType(totalSize)
+        usageMsg = "%.1f%% used (%s%s out of %s%s)\n" % (totUsagePercent,
+                                                         totUsedSz,
+                                                         totUsedSzUnit,
+                                                         totSpaceSz,
+                                                         totSpaceSzUnit)
+    else:
+        usageMsg = "%.1f%% used (%s%s out of %s%s)\n" % (totUsagePercent,
+                                                         totalUsed,
+                                                         usage,
+                                                         totalSize,
+                                                         usage)
+
+    if usageMsg:
+        msg = "%s:mount(s): (%s)" % (usageMsg, msg)
+    return statusCode, msg, diskPerf
 
 
 if __name__ == '__main__':
@@ -226,25 +319,28 @@ if __name__ == '__main__':
     if not options.mountPath or options.lvm or options.all:
         options.mountPath += getMounts(searchQuery, options.exclude)
 
-    level, msg, diskPerf = showDiskUsage(options.warn,
-                                         options.crit,
-                                         options.mountPath,
-                                         options.inode,
-                                         options.usage,
-                                         options.lvm,
-                                         options.ignore)
+    statusCode, msg, diskPerf = showDiskUsage(options.warn,
+                                              options.crit,
+                                              options.mountPath,
+                                              options.inode,
+                                              options.usage,
+                                              options.lvm,
+                                              options.ignore)
 
-    if utils.PluginStatusCode.CRITICAL == level:
-        sys.stdout.write("%s | %s\n" % (
+    if utils.PluginStatusCode.CRITICAL == statusCode:
+        sys.stdout.write("%s : %s | %s\n" % (
+            utils.PluginStatus.CRITICAL,
             msg,
             " ".join(diskPerf)))
         sys.exit(utils.PluginStatusCode.CRITICAL)
-    elif utils.PluginStatusCode.WARNING == level:
-        sys.stdout.write("%s | %s\n" % (
+    elif utils.PluginStatusCode.WARNING == statusCode:
+        sys.stdout.write("%s : %s | %s\n" % (
+            utils.PluginStatus.WARNING,
             msg,
             " ".join(diskPerf)))
         sys.exit(utils.PluginStatusCode.WARNING)
     else:
-        sys.stdout.write("%s | %s\n" % (
+        sys.stdout.write("%s : %s | %s\n" % (
+            utils.PluginStatus.OK,
             msg,
             " ".join(diskPerf)))
