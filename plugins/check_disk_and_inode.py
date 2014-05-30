@@ -38,8 +38,17 @@ def getVal(val):
 
 def getUsageAndFree(command, lvm):
     disk = {'path': None, 'usePercent': None, 'avail': None,
-            'used': None, 'size': None, 'fs': None}
-    status = commands.getstatusoutput(command)[1].split()
+            'used': None, 'size': None, 'fs': None, 'status':None,
+            'retCode':0}
+    status = commands.getstatusoutput(command)
+    if status[0] != 0:
+        disk['retCode'] = status[0]
+        if status[0] == 256:
+            disk['status'] = "Brick path not found!"
+        else:
+            disk['status'] = status[1]
+        return disk
+    status = status[1].split()
     disk['path'] = status[-1]
     disk['avail'] = getVal(status[-3])
     disk['used'] = getVal(status[-4])
@@ -125,6 +134,9 @@ def showDiskUsage(warn, crit, mountPaths, toListInode, usage=False,
 
         inode = getInode(path,
                          isLvm)
+
+        if disk['retCode'] != 0 or inode['retCode'] != 0:
+            return utils.PluginStatusCode.CRITICAL, disk['status'], ""
 
         if disk['path'] in mounts:
             continue
