@@ -21,6 +21,7 @@ import sys
 import argparse
 import capacity
 from glusternagios import utils
+from glusternagios import glustercli
 
 
 def showVolumeUtilization(vname, warnLevel, critLevel):
@@ -46,10 +47,6 @@ def showVolumeUtilization(vname, warnLevel, critLevel):
     #used size in KB
     used_size = total_size - ((buf['f_bsize'] * buf['f_bfree']) * 0.000976563)
     vol_utilization = (used_size / total_size) * 100
-#    print int(total_size)
-#    print int(free_size)
-#    print int(used_size)
-#    print vol_utilization
     perfLines = []
     perfLines.append(("utilization=%s%%;%s;%s total=%s "
                       "used=%s free=%s" % (str(int(vol_utilization)),
@@ -74,6 +71,22 @@ def showVolumeUtilization(vname, warnLevel, critLevel):
             ("OK: Utilization:%s%%"
              "| %s\n" % (str(int(vol_utilization)), " ".join(perfLines))))
         sys.exit(utils.PluginStatusCode.OK)
+
+
+def check_volume_status(volume):
+    try:
+        volumes = glustercli.volumeInfo(volume)
+        if volumes.get(volume) is None:
+            sys.stdout.write("CRITICAL: Volume not found\n")
+            sys.exit(utils.PluginStatusCode.CRITICAL)
+        elif volumes[volume]["volumeStatus"] == \
+                glustercli.VolumeStatus.OFFLINE:
+            sys.stdout.write("CRITICAL: Volume is stopped\n")
+            sys.exit(utils.PluginStatusCode.CRITICAL)
+    except glustercli.GlusterCmdFailedException:
+        sys.stdout.write("UNKNOWN: Failed to get the "
+                         "Volume Utilization Data\n")
+        sys.exit(utils.PluginStatusCode.UNKNOWN)
 
 
 def parse_input():
@@ -103,4 +116,6 @@ def parse_input():
 
 if __name__ == '__main__':
     args = parse_input()
+    #check the volume status before getting the volume utilization
+    check_volume_status(args.volume)
     showVolumeUtilization(args.volume, args.warning, args.critical)
