@@ -153,9 +153,11 @@ def getSmbStatus(volInfo):
 
     # if smb is not running and any of the volume uses smb
     # then its required to alert the user
-    for k, v in volInfo.iteritems():
-        cifsStatus = v.get('options', {}).get('user.cifs', 'enable')
-        smbStatus = v.get('options', {}).get('user.smb', 'enable')
+    for volume, volumeInfo in volInfo.iteritems():
+        if volumeInfo['volumeStatus'] == glustercli.VolumeStatus.OFFLINE:
+            continue
+        cifsStatus = volumeInfo.get('options', {}).get('user.cifs', 'enable')
+        smbStatus = volumeInfo.get('options', {}).get('user.smb', 'enable')
         if cifsStatus == 'enable' and smbStatus == 'enable':
             msg = "CRITICAL: Process smb is not running"
             status = utils.PluginStatusCode.CRITICAL
@@ -174,8 +176,10 @@ def getQuotadStatus(volInfo):
 
     # if quota is not running and any of the volume uses quota
     # then the quotad process should be running in the host
-    for k, v in volInfo.iteritems():
-        quotadStatus = v.get('options', {}).get('features.quota', '')
+    for volume, volumeInfo in volInfo.iteritems():
+        if volumeInfo['volumeStatus'] == glustercli.VolumeStatus.OFFLINE:
+            continue
+        quotadStatus = volumeInfo.get('options', {}).get('features.quota', '')
         if quotadStatus == 'on':
             msg = "CRITICAL: Process quotad is not running"
             utils.PluginStatusCode.CRITICAL
