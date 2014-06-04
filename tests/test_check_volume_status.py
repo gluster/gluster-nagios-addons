@@ -42,7 +42,7 @@ class TestCheckVolumeStatus(TestCaseBase):
         exitStatusCode, exitStatusMsg = (check_volume_status
                                          .getVolumeStatus(args))
         print exitStatusMsg
-        assert exitStatusMsg == "OK: Volume is up"
+        assert exitStatusMsg == "OK: Volume : DISTRIBUTED type - Volume is up"
         assert exitStatusCode == utils.PluginStatusCode.OK
 
     # Method to test volume status when no volume
