@@ -38,8 +38,8 @@ def getVal(val):
 
 def getUsageAndFree(command, lvm):
     disk = {'path': None, 'usePercent': None, 'avail': None,
-            'used': None, 'size': None, 'fs': None, 'status':None,
-            'retCode':0}
+            'used': None, 'size': None, 'fs': None, 'status': None,
+            'retCode': 0}
     status = commands.getstatusoutput(command)
     if status[0] != 0:
         disk['retCode'] = status[0]
