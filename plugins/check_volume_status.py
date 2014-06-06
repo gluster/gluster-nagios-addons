@@ -135,6 +135,8 @@ def getVolumeGeoRepStatus(args):
                 exitstatus = utils.PluginStatusCode.WARNING
         if exitstatus != utils.PluginStatusCode.OK:
             message += "\n" + detail
+        if len(volume[args.volume]['slaves']) == 0:
+            message += "No active sessions found"
     return exitstatus, message
 
 
