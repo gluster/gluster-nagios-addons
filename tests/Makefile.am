@@ -21,6 +21,7 @@
 test_modules = \
 	test_check_gluster_syslog.py \
 	test_check_volume_status.py \
+	test_check_quorum_status.py \
 	check_proc_test_data.py \
 	test_cpu.py \
 	test_cpu_dataFile.py \

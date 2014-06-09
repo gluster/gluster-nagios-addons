@@ -147,6 +147,7 @@ command[discover_volume_list]=sudo %{_libdir}/nagios/plugins/gluster/discover_vo
 command[discover_volume_info]=sudo %{_libdir}/nagios/plugins/gluster/discover_volumes.py -v \$ARG1\$
 command[discoverhostparams]=sudo %{_libdir}/nagios/plugins/gluster/discoverhostparams.py
 command[configure_gluster_node]=sudo %{_libdir}/nagios/plugins/gluster/configure_gluster_node.py -c \$ARG1\$ -n \$ARG2\$ -H \$ARG3\$
+command[check_quorum_status]=sudo %{_libdir}/nagios/plugins/gluster/check_quorum_status.py
 %{_end_conf_section}
 EOF
 
@@ -155,6 +156,7 @@ EOF
 %_init_try_restart crond
 %_init_try_restart rsyslog
 %_init_try_restart glusterpmd
+%_init_try_restart nrpe
 
 %preun
 if [ "$1" -eq 0 ]; then
