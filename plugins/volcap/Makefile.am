@@ -1,5 +1,5 @@
 
-dist_glusternagiosplugins_PYTHON = \
+nodist_glusternagiosplugins_PYTHON = \
 	capacity.so \
 	$(NULL)
 
@@ -9,13 +9,11 @@ capacity.so: volCap.c setup.py
 all-local: capacity.so
 
 EXTRA_DIST = \
-	$(NULL)
-
-EXTRA_DIST = \
 	__init__.py \
-	volCap.c \
+	setup.py \
 	tests.py \
-	setup.py
+	volCap.c \
+	$(NULL)
 
 CLEANFILES = \
 	volcap.o \
