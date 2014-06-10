@@ -23,6 +23,9 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 #
 
+# Source function library.
+. /etc/rc.d/init.d/functions
+
 BASE=glusterpmd
 
 # Fedora File System Layout dictates /run
@@ -30,6 +33,16 @@ BASE=glusterpmd
 PIDFILE="${RUNDIR:-/var/run}/${BASE}.pid"
 
 PID=`test -f $PIDFILE && cat $PIDFILE`
+
+restart()
+{
+    if [ -f $PIDFILE ]; then
+        echo "Restarting gluster process monitoring service"
+        python /usr/lib64/nagios/plugins/gluster/check_proc_status.py restart
+    else
+        python /usr/lib64/nagios/plugins/gluster/check_proc_status.py start
+    fi
+}
 
 case "$1" in
   start)
@@ -46,18 +59,20 @@ case "$1" in
         python /usr/lib64/nagios/plugins/gluster/check_proc_status.py stop
     fi
     ;;
+  status)
+    status $BASE
+    ;;
+  condrestart)
+    status $BASE > /dev/null || exit 0
+    restart
+    ;;
   restart)
-    if [ -f $PIDFILE ]; then
-        echo "Restarting gluster process monitoring service"
-        python /usr/lib64/nagios/plugins/gluster/check_proc_status.py restart
-    else
-        python /usr/lib64/nagios/plugins/gluster/check_proc_status.py start
-    fi
+    restart
     ;;
   *)
-    echo "Usage: /etc/init.d/glusterpmd {start|stop|restart}"
+    echo "Usage: /etc/init.d/glusterpmd {start|stop|status|restart|condrestart}"
     exit 1
     ;;
 esac
 
-exit 0
+exit $?
