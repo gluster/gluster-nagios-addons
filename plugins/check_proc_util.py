@@ -16,8 +16,8 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 #
 
+import os
 import errno
-import psutil
 
 
 from glusternagios import utils
@@ -49,6 +49,13 @@ class CtdbNodeStatus:
     DISABLED = 'DISABLED'
 
 
+def _pidExists(pid):
+    if type(pid) is int and pid > 0:
+        return os.path.exists("/proc/%s" % pid)
+    else:
+        raise ValueError("invalid pid :%s" % pid)
+
+
 def getBrickStatus(volumeName, brickName):
     status = None
     brickPath = brickName.split(':')[1]
@@ -56,18 +63,24 @@ def getBrickStatus(volumeName, brickName):
     try:
         with open("%s/%s/run/%s" % (
                 _glusterVolPath, volumeName, pidFile)) as f:
-            if psutil.pid_exists(int(f.read().strip())):
-                status = utils.PluginStatusCode.OK
-                brickDevice = storage.getBrickDeviceName(brickPath)
-                disk = storage.getDisksForBrick(brickDevice)
-                cmd = [checkIdeSmartCmdPath.cmd, "-d", disk, "-n"]
-                rc, out, err = utils.execCmd(cmd)
-                if rc == utils.PluginStatusCode.CRITICAL and \
-                        "tests failed" in out[0]:
-                    status = utils.PluginStatusCode.WARNING
-                    msg = "WARNING: Brick %s: %s" % (brickPath, out[0])
-            else:
+            try:
+                if _pidExists(int(f.read().strip())):
+                    status = utils.PluginStatusCode.OK
+                    brickDevice = storage.getBrickDeviceName(brickPath)
+                    disk = storage.getDisksForBrick(brickDevice)
+                    cmd = [checkIdeSmartCmdPath.cmd, "-d", disk, "-n"]
+                    rc, out, err = utils.execCmd(cmd)
+                    if rc == utils.PluginStatusCode.CRITICAL and \
+                       "tests failed" in out[0]:
+                        status = utils.PluginStatusCode.WARNING
+                        msg = "WARNING: Brick %s: %s" % (brickPath, out[0])
+                else:
+                    status = utils.PluginStatusCode.CRITICAL
+            except ValueError as e:
                 status = utils.PluginStatusCode.CRITICAL
+                msg = "Invalid pid of brick %s: %s" % (brickPath,
+                                                       str(e))
+                return status, msg
     except IOError as e:
         if e.errno == errno.ENOENT:
             status = utils.PluginStatusCode.CRITICAL
