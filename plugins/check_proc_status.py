@@ -125,7 +125,8 @@ class App():
             if smbStatus.isStatusChanged(status, msg):
                 nscautils.send_to_nsca(hostName, _smbService, status, msg)
 
-            status, msg = check_proc_util.getCtdbStatus(smbStatus, nfsStatus)
+            status, msg = check_proc_util.getCtdbStatus(smbStatus.code,
+                                                        nfsStatus.code)
             if ctdbStatus.isStatusChanged(status, msg):
                 nscautils.send_to_nsca(hostName, _ctdbdService, status, msg)
 
