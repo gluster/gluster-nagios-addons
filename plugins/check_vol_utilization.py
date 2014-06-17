@@ -19,32 +19,39 @@
 
 import sys
 import argparse
-import capacity
 from glusternagios import utils
 from glusternagios import glustercli
+import gfapi
+
+
+BYTES_IN_KB = 1024
+
+
+def computeVolumeStats(data):
+    total = data.f_blocks * data.f_bsize
+    free = data.f_bfree * data.f_bsize
+    used = total - free
+    return {'sizeTotal': float(total),
+            'sizeFree': float(free),
+            'sizeUsed': float(used)}
 
 
 def showVolumeUtilization(vname, warnLevel, critLevel):
-    buf = {}
     try:
-        buf = capacity.statvfs(vname, "localhost")
-    except Exception:
-        sys.stdout.write("UNKNOWN: Failed to get the "
+        data = gfapi.getVolumeStatvfs(vname)
+    except gfapi.GlusterLibgfapiException:
+        sys.stdout.write("CRITICAL: Failed to get the "
                          "Volume Utilization Data\n")
-        sys.exit(utils.PluginStatusCode.UNKNOWN)
-####################################################################
-# statvfs.frsize * statvfs.f_blocks# Size of filesystem in bytes    #
-# statvfs.frsize * statvfs.f_bfree # Actual number of free bytes    #
-# statvfs.frsize * statvfs.f_bavail# Number of free bytes that      #
-# ordinary users are allowed to use (excl. reserved space           #
-####################################################################
-    # total size in KB
-    total_size = (buf['f_bsize'] * buf['f_blocks']) / 1024.0
-    # Available free size in KB
-    free_size = (buf['f_bsize'] * buf['f_bavail']) / 1024.0
-    # used size in KB
-    used_size = total_size - ((buf['f_bsize'] * buf['f_bfree']) / 1024.0)
+        sys.exit(utils.PluginStatusCode.CRITICAL)
+    volumeCapacity = computeVolumeStats(data)
+    #total size in KB
+    total_size = volumeCapacity['sizeTotal'] / BYTES_IN_KB
+    #Available free size in KB
+    free_size = volumeCapacity['sizeFree'] / BYTES_IN_KB
+    #used size in KB
+    used_size = volumeCapacity['sizeUsed'] / BYTES_IN_KB
     vol_utilization = (used_size / total_size) * 100
+
     perfLines = []
     perfLines.append(("utilization=%.2f%%;%d;%d total=%0.2f "
                       "used=%0.2f free=%0.2f" % (vol_utilization, warnLevel,

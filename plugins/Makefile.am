@@ -1,7 +1,3 @@
-SUBDIRS = \
-	volcap \
-	$(NULL)
-
 initdir = $(sysconfdir)/init.d
 init_DATA = \
 	glusterpmd \
@@ -26,6 +22,7 @@ dist_glusternagiosplugins_PYTHON = \
 	check_gluster_proc_status.py \
 	check_proc_util.py \
 	__init__.py \
+	gfapi.py \
 	memory.py \
 	network.py \
 	nscautils.py \
