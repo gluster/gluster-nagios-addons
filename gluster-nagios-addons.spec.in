@@ -129,7 +129,10 @@ rm -rf %{buildroot}
 %else
 /sbin/iptables -I INPUT 1 -p tcp --dport 5666 -j ACCEPT
 /sbin/service iptables save
-%_init_restart iptables
+if [ "$1" -eq 2 ]; then
+    # called at rpm upgrade
+    %_init_try_restart iptables
+fi
 %endif
 
 if grep -q "dont_blame_nrpe=0" %{_sysconfdir}/nagios/nrpe.cfg ; then
@@ -157,11 +160,13 @@ command[discoverhostparams]=sudo %{_libdir}/nagios/plugins/gluster/discoverhostp
 command[configure_gluster_node]=sudo %{_libdir}/nagios/plugins/gluster/configure_gluster_node.py -c \$ARG1\$ -n \$ARG2\$ -H \$ARG3\$
 %{_end_conf_section}
 EOF
+
 %_init_enable nrpe
 %_init_enable glusterpmd
-%_init_restart crond
-%_init_restart rsyslog
-%_init_restart glusterpmd
+
+%_init_try_restart crond
+%_init_try_restart rsyslog
+%_init_try_restart glusterpmd
 
 %preun
 if [ "$1" -eq 0 ]; then
