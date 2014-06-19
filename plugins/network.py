@@ -84,7 +84,8 @@ def _getStatMessage(stat, all=False, includes=(), excludes=()):
     for info in stat['network']['net-dev']:
         ipaddr = interfaces.get(info['iface'], {}).get('ipaddr')
         flags = interfaces.get(info['iface'], {}).get('flags')
-        if flags and (flags & ethtool.IFF_UP):
+        if flags and (flags & ethtool.IFF_UP) and \
+           (flags & ethtool.IFF_RUNNING):
             status = InterfaceStatus.UP
         else:
             status = InterfaceStatus.DOWN
