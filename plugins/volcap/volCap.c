@@ -115,7 +115,7 @@ static PyObject *glfspy_statvfs (PyObject *self, PyObject *args)
   closelog ();
   //return Py_BuildValue("i", rv);
   if(rv == 0)
-    return Py_BuildValue("{s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i,s:i}","f_bsize",buf.f_bsize,"f_frsize",buf.f_frsize,"f_blocks",buf.f_blocks,"f_bfree",buf.f_bfree,"f_bavail",buf.f_bavail,"f_files",buf.f_files,"f_ffree",buf.f_ffree,"f_favail",buf.f_favail,"f_fsid",buf.f_fsid,"f_flag",buf.f_flag,"f_namemax",buf.f_namemax);
+    return Py_BuildValue("{s:l,s:l,s:l,s:l,s:l,s:l,s:l,s:l,s:l,s:l,s:l}","f_bsize",buf.f_bsize,"f_frsize",buf.f_frsize,"f_blocks",buf.f_blocks,"f_bfree",buf.f_bfree,"f_bavail",buf.f_bavail,"f_files",buf.f_files,"f_ffree",buf.f_ffree,"f_favail",buf.f_favail,"f_fsid",buf.f_fsid,"f_flag",buf.f_flag,"f_namemax",buf.f_namemax);
   else {
     if(rv == USAGE_ERROR)
       PyErr_SetString(StatvfsError, "Usage error");

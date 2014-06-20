@@ -32,8 +32,6 @@ def showVolumeUtilization(vname, warnLevel, critLevel):
         sys.stdout.write("UNKNOWN: Failed to get the "
                          "Volume Utilization Data\n")
         sys.exit(utils.PluginStatusCode.UNKNOWN)
-#    print buf
-
 ####################################################################
 #statvfs.frsize * statvfs.f_blocks# Size of filesystem in bytes    #
 #statvfs.frsize * statvfs.f_bfree # Actual number of free bytes    #
@@ -41,35 +39,31 @@ def showVolumeUtilization(vname, warnLevel, critLevel):
 #ordinary users are allowed to use (excl. reserved space           #
 ####################################################################
     #total size in KB
-    total_size = (buf['f_bsize'] * buf['f_blocks']) * 0.000976563
+    total_size = (buf['f_bsize'] * buf['f_blocks']) / 1024.0
     #Available free size in KB
-    free_size = (buf['f_bsize'] * buf['f_bavail']) * 0.000976563
+    free_size = (buf['f_bsize'] * buf['f_bavail']) / 1024.0
     #used size in KB
-    used_size = total_size - ((buf['f_bsize'] * buf['f_bfree']) * 0.000976563)
+    used_size = total_size - ((buf['f_bsize'] * buf['f_bfree']) / 1024.0)
     vol_utilization = (used_size / total_size) * 100
     perfLines = []
-    perfLines.append(("utilization=%s%%;%s;%s total=%s "
-                      "used=%s free=%s" % (str(int(vol_utilization)),
-                                           str(warnLevel), str(critLevel),
-                                           str(int(total_size)),
-                                           str(int(used_size)),
-                                           str(int(free_size)))))
-#    print perfLines
-
+    perfLines.append(("utilization=%.2f%%;%d;%d total=%0.2f "
+                      "used=%0.2f free=%0.2f" % (vol_utilization, warnLevel,
+                                                 critLevel, total_size,
+                                                 used_size, free_size)))
     if int(vol_utilization) > critLevel:
         sys.stdout.write(
-            ("CRITICAL: Utilization:%s%%"
-             "| %s\n" % (str(int(vol_utilization)), " ".join(perfLines))))
+            ("CRITICAL: Utilization:%0.2f%%"
+             "| %s\n" % (vol_utilization, " ".join(perfLines))))
         sys.exit(utils.PluginStatusCode.CRITICAL)
     elif int(vol_utilization) > warnLevel:
         sys.stdout.write(
-            ("WARNING: Utilization:%s%%"
-             "| %s\n" % (str(int(vol_utilization)), " ".join(perfLines))))
+            ("WARNING: Utilization:%0.2f%%"
+             "| %s\n" % (vol_utilization, " ".join(perfLines))))
         sys.exit(utils.PluginStatusCode.WARNING)
     else:
         sys.stdout.write(
-            ("OK: Utilization:%s%%"
-             "| %s\n" % (str(int(vol_utilization)), " ".join(perfLines))))
+            ("OK: Utilization:%0.2f%%"
+             "| %s\n" % (vol_utilization, " ".join(perfLines))))
         sys.exit(utils.PluginStatusCode.OK)
 
 
