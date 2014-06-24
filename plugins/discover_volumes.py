@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # discover_volumes.py -- nagios plugin for discovering
-#logical gluster components
+# logical gluster components
 # Copyright (C) 2014 Red Hat Inc
 #
 # This program is free software; you can redistribute it and/or

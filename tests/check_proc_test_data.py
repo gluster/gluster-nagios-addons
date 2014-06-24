@@ -93,7 +93,7 @@ nfsEnabled2 = {'rep1': {'brickCount': '2',
                         'volumeStatus': 'ONLINE',
                         'volumeType': 'REPLICATE'}}
 
-#NFS enabled using set option
+# NFS enabled using set option
 nfsEnabled3 = {'vol1': {'brickCount': '3',
                         'bricks': ['10.70.43.33:/bricks/b1',
                                    '10.70.43.33:/bricks/my-vol1-b2.new',

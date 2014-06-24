@@ -55,13 +55,13 @@ def processQuotaMsg(msg, alertlevel):
 def processQuorumMsg(msgid, msg, level):
     logger = logging.getLogger("processQuorumMsg")
     pluginstatus = None
-    #if msgid == 106002:
+    # if msgid == 106002:
     if "[MSGID: 106002]" in msg or "[MSGID: 106001]" in msg:
         # [MSGID: 106002] Server quorum lost for volume dist.
         #  Stopping local bricks.
         # [MSGID: 106001] Server quorum not met. Rejecting operation.
         pluginstatus = utils.PluginStatusCode.CRITICAL
-    #elif msgid == 106003:
+    # elif msgid == 106003:
     elif "[MSGID: 106003]" in msg:
         # [MSGID: 106003] Server quorum regained for volume dist.
         #  Starting local bricks.

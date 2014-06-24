@@ -33,16 +33,16 @@ def showVolumeUtilization(vname, warnLevel, critLevel):
                          "Volume Utilization Data\n")
         sys.exit(utils.PluginStatusCode.UNKNOWN)
 ####################################################################
-#statvfs.frsize * statvfs.f_blocks# Size of filesystem in bytes    #
-#statvfs.frsize * statvfs.f_bfree # Actual number of free bytes    #
-#statvfs.frsize * statvfs.f_bavail# Number of free bytes that      #
-#ordinary users are allowed to use (excl. reserved space           #
+# statvfs.frsize * statvfs.f_blocks# Size of filesystem in bytes    #
+# statvfs.frsize * statvfs.f_bfree # Actual number of free bytes    #
+# statvfs.frsize * statvfs.f_bavail# Number of free bytes that      #
+# ordinary users are allowed to use (excl. reserved space           #
 ####################################################################
-    #total size in KB
+    # total size in KB
     total_size = (buf['f_bsize'] * buf['f_blocks']) / 1024.0
-    #Available free size in KB
+    # Available free size in KB
     free_size = (buf['f_bsize'] * buf['f_bavail']) / 1024.0
-    #used size in KB
+    # used size in KB
     used_size = total_size - ((buf['f_bsize'] * buf['f_bfree']) / 1024.0)
     vol_utilization = (used_size / total_size) * 100
     perfLines = []
@@ -110,6 +110,6 @@ def parse_input():
 
 if __name__ == '__main__':
     args = parse_input()
-    #check the volume status before getting the volume utilization
+    # check the volume status before getting the volume utilization
     check_volume_status(args.volume)
     showVolumeUtilization(args.volume, args.warning, args.critical)

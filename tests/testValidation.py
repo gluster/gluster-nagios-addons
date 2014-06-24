@@ -18,7 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-## This framework is mostly copied from vdsm test framework
+# This framework is mostly copied from vdsm test framework
 
 import os
 from nose.plugins.skip import SkipTest

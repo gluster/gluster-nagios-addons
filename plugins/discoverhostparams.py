@@ -36,11 +36,11 @@ def discoverhostparams():
 
 
 ###
-#This plugin discovers all the host specific parameters
-#Currently it gets only the hostname from the node
-#but when we add support for discovering physical
-#components like cpu,network,disk etc, all those will be
-#addded as part of this module
+# This plugin discovers all the host specific parameters
+# Currently it gets only the hostname from the node
+# but when we add support for discovering physical
+# components like cpu,network,disk etc, all those will be
+# addded as part of this module
 ###
 if __name__ == '__main__':
     discoverhostparams()
