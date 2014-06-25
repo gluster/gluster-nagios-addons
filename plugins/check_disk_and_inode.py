@@ -215,7 +215,7 @@ def showDiskUsage(warn, crit, mountPaths, toListInode, usage=False,
                     crit * inode['used'] / 100,
                     inode['size'])
         elif disk['path']:
-            data = "%s=%.2f%%;%s;%s;0;%sGB" % (
+            data = "%s=%.2f%%;%s;%s;0;%s" % (
                 disk['path'],
                 disk['usePcent'],
                 warn,
