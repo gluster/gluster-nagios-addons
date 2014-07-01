@@ -123,17 +123,6 @@ rm -rf %{buildroot}
 
 
 %post
-%if ( 0%{?_with_firewalld:1} )
-/bin/firewall-cmd --permanent --add-port=5666/tcp
-/bin/firewall-cmd --add-port=5666/tcp
-%else
-/sbin/iptables -I INPUT 1 -p tcp --dport 5666 -j ACCEPT
-/sbin/service iptables save
-if [ "$1" -eq 2 ]; then
-    # called at rpm upgrade
-    %_init_try_restart iptables
-fi
-%endif
 
 if grep -q "dont_blame_nrpe=0" %{_sysconfdir}/nagios/nrpe.cfg ; then
   sed -i -e 's/dont_blame_nrpe=0/dont_blame_nrpe=1/g' %{_sysconfdir}/nagios/nrpe.cfg
