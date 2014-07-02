@@ -172,7 +172,7 @@ fi
 %{_sysconfdir}/cron.d/gluster-sysstat.crontab
 %{_sysconfdir}/rsyslog.d/glusternagios.conf
 %{_sysconfdir}/sudoers.d/nrpe
-%{_sysconfdir}/nagios/nagios_server.conf
+%config(noreplace) %{_sysconfdir}/nagios/nagios_server.conf
 %{_sysconfdir}/init.d/glusterpmd
 
 %files tests
