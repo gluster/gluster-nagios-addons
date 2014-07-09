@@ -147,22 +147,30 @@ def parse_input():
     parser.add_option('-x', '--exclude', action="append", type='string',
                       dest='exclude',
                       help='Exclude disk/brick')
+    parser.add_option('-s', action="store_true", default=False,
+                      dest='showErrorDisk',
+                      help='Show critical or warning disks in the status')
     return parser.parse_args()
 
 
 def _getMsg(okList, warnList, critList):
     msg = ", ".join(critList)
+    errorDiskMsg = msg
     if critList and (warnList or okList):
         msg = "CRITICAL: " + msg
     if warnList:
         if msg:
             msg += "; WARNING: "
         msg += ", ".join(warnList)
+        if errorDiskMsg:
+            errorDiskMsg += "; WARNING: " + ", ".join(warnList)
+        else:
+            errorDiskMsg = msg
     if okList:
         if msg:
             msg += "; OK: "
         msg += ", ".join(okList)
-    return msg
+    return msg, errorDiskMsg
 
 
 def _getUnitAndType(val):
@@ -174,7 +182,7 @@ def _getUnitAndType(val):
 
 
 def showDiskUsage(warn, crit, mountPaths, toListInode, usage=False,
-                  isLvm=False, ignoreError=False):
+                  isLvm=False, ignoreError=False, showErrorDisk=True):
     diskPerf = []
     warnList = []
     critList = []
@@ -275,7 +283,7 @@ def showDiskUsage(warn, crit, mountPaths, toListInode, usage=False,
                 statusCode = utils.PluginStatusCode.UNKNOWN
             okList.append(msg)
 
-    msg = _getMsg(okList, warnList, critList)
+    msg, errorDiskMsg = _getMsg(okList, warnList, critList)
 
     if totalUsed == 0 and totalSize == 0:
         # avoid zero div error
@@ -303,8 +311,11 @@ def showDiskUsage(warn, crit, mountPaths, toListInode, usage=False,
                                                          totalSize,
                                                          usage)
 
-    if usageMsg:
+    if showErrorDisk:
+        msg = "%s\n:mount(s): (%s)" % (errorDiskMsg, msg)
+    else:
         msg = "%s:mount(s): (%s)" % (usageMsg, msg)
+
     return statusCode, msg, diskPerf
 
 
@@ -325,7 +336,8 @@ if __name__ == '__main__':
                                               options.inode,
                                               options.usage,
                                               options.lvm,
-                                              options.ignore)
+                                              options.ignore,
+                                              options.showErrorDisk)
 
     if utils.PluginStatusCode.CRITICAL == statusCode:
         sys.stdout.write("%s : %s | %s\n" % (
@@ -340,7 +352,9 @@ if __name__ == '__main__':
             " ".join(diskPerf)))
         sys.exit(utils.PluginStatusCode.WARNING)
     else:
-        sys.stdout.write("%s : %s | %s\n" % (
-            utils.PluginStatus.OK,
-            msg,
-            " ".join(diskPerf)))
+        if options.showErrorDisk:
+            sys.stdout.write("%s %s | %s\n" % (
+                utils.PluginStatus.OK, msg, " ".join(diskPerf)))
+        else:
+            sys.stdout.write("%s : %s | %s\n" % (
+                utils.PluginStatus.OK, msg, " ".join(diskPerf)))
