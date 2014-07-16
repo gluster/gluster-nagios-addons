@@ -8,7 +8,7 @@ $actionomprogbinary @glusternagiospluginsdir@/check_gluster_syslog.py
 #
 $template GLFS_NAG_Template,"%msgid%/%syslogfacility-text:::uppercase%/%syslogseverity-text:::uppercase%/%app-name:::uppercase% [%TIMESTAMP:::date-rfc3339%] %msg:::sp-if-no-1st-sp%%msg:::drop-last-lf%\n"
 
-if (($msg contains 'quorum' or $msg contains 'quota_log_usage') and not ($msg contains '@cee')) then :omprog:;GLFS_NAG_Template
+if (($msg contains 'quorum') and not ($msg contains '@cee')) then :omprog:;GLFS_NAG_Template
 
 
 #
