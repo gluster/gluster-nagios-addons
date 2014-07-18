@@ -151,7 +151,6 @@ command[configure_gluster_node]=sudo %{_libdir}/nagios/plugins/gluster/configure
 EOF
 
 %_init_enable nrpe
-%_init_enable glusterpmd
 
 %_init_try_restart crond
 %_init_try_restart rsyslog
