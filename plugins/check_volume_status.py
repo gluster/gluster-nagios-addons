@@ -41,9 +41,12 @@ def getVolumeStatus(args):
             exitstatus = utils.PluginStatusCode.CRITICAL
             message = "CRITICAL: Volume : %s type is stopped" % \
                       (volumes[args.volume]["volumeType"])
-    except glustercli.GlusterCmdFailedException as e:
-        out = ("UNKNOWN: Command execution failed %s" % e.message)
+    except glustercli.GlusterLockedException as e:
+        out = ("UNKNOWN: temporary error. %s" % '.'.join(e.err))
         return utils.PluginStatusCode.UNKNOWN, out
+    except glustercli.GlusterCmdFailedException as e:
+        out = ("WARNING: Command execution failed. %s" % '.'.join(e.err))
+        return utils.PluginStatusCode.WARNING, out
 
     return exitstatus, message
 
@@ -51,10 +54,13 @@ def getVolumeStatus(args):
 def getVolumeQuotaStatus(args):
     try:
         qstatus = glustercli.volumeQuotaStatus(args.volume)
-    except glustercli.GlusterCmdFailedException as e:
-        out = ("QUOTA: Quota status could not be determined %s"
-               % '.'.join(e.err))
+    except glustercli.GlusterLockedException as e:
+        out = ("UNKNOWN: temporary error. %s" % '.'.join(e.err))
         return utils.PluginStatusCode.UNKNOWN, out
+    except glustercli.GlusterCmdFailedException as e:
+        out = ("QUOTA: Quota status could not be determined. %s"
+               % '.'.join(e.err))
+        return utils.PluginStatusCode.WARNING, out
 
     returnMsg = "QUOTA:"
     if qstatus.get("hard_ex_dirs"):
@@ -80,8 +86,11 @@ def getVolumeQuotaStatus(args):
 def getVolumeSelfHealStatus(args):
     try:
         volume = glustercli.volumeHealSplitBrainStatus(args.volume)
+    except glustercli.GlusterLockedException as e:
+        out = ("UNKNOWN: temporary error. %s" % '.'.join(e.err))
+        return utils.PluginStatusCode.UNKNOWN, out
     except glustercli.GlusterCmdFailedException as e:
-        out = ("Self heal status could not be determined - %s"
+        out = ("Self heal status could not be determined. %s"
                % '.'.join(e.err))
         return utils.PluginStatusCode.WARNING, out
 
@@ -108,8 +117,11 @@ def getVolumeSelfHealStatus(args):
 def getVolumeGeoRepStatus(args):
     try:
         volume = glustercli.volumeGeoRepStatus(args.volume)
+    except glustercli.GlusterLockedException as e:
+        out = ("UNKNOWN: temporary error. %s" % '.'.join(e.err))
+        return utils.PluginStatusCode.UNKNOWN, out
     except glustercli.GlusterCmdFailedException as e:
-        out = ("Geo replication status could not be determined - %s"
+        out = ("Geo replication status could not be determined. %s"
                % '.'.join(e.err))
         return utils.PluginStatusCode.WARNING, out
 
