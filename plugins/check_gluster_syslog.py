@@ -21,15 +21,9 @@
 #
 import re
 import sys
-import select
-import logging
 
 import nscautils
 from glusternagios import utils
-
-# skeleton config parameters
-__pollPeriod = 0.75  # the number of seconds between polling for new messages
-__maxAtOnce = 1024  # max no of messages that are processed within one batch
 
 
 def findVolName(pattern):
@@ -53,7 +47,6 @@ def processQuotaMsg(msg, alertlevel):
 
 
 def processQuorumMsg(msgid, msg, level):
-    logger = logging.getLogger("processQuorumMsg")
     pluginstatus = None
     # if msgid == 106002:
     if "[MSGID: 106002]" in msg or "[MSGID: 106001]" in msg:
@@ -70,11 +63,10 @@ def processQuorumMsg(msgid, msg, level):
     if pluginstatus >= 0:
         serviceName = "Cluster - Quorum"
         alertMsg = "QUORUM:" + msg[msg.rfind(':') + 1:]
-        ret = nscautils.send_to_nsca_subproc(nscautils.getNagiosClusterName(),
-                                             serviceName,
-                                             pluginstatus,
-                                             alertMsg)
-        logger.debug(" nsca ret code for alertMsg %s - %s" % (alertMsg, ret))
+        nscautils.send_to_nsca_subproc(nscautils.getNagiosClusterName(),
+                                       serviceName,
+                                       pluginstatus,
+                                       alertMsg)
 
 
 def processMsg(msg):
@@ -104,37 +96,16 @@ def onReceive(msgs):
         processMsg(msg)
 
 
-"""
--------------------------------------------------------
-This is plumbing that DOES NOT need to be CHANGED
--------------------------------------------------------
-Implementor's note: Python seems to very agressively
-buffer stdouot. The end result was that rsyslog does not
-receive the script's messages in a timely manner (sometimes
-even never, probably due to races). To prevent this, we
-flush stdout after we have done processing. This is especially
-important once we get to the point where the plugin does
-two-way conversations with rsyslog. Do NOT change this!
-See also: https://github.com/rsyslog/rsyslog/issues/22
-"""
 if __name__ == '__main__':
-    logging.basicConfig()
-    logger = logging.getLogger(__name__)
     keepRunning = 1
     while keepRunning == 1:
-        while keepRunning and sys.stdin in \
-                select.select([sys.stdin], [], [], __pollPeriod)[0]:
-            msgs = []
-            while keepRunning and sys.stdin in \
-                    select.select([sys.stdin], [], [], 0)[0]:
-                line = sys.stdin.readline()
-                if line:
-                    msgs.append(line)
-                else:  # an empty line means stdin has been closed
-                    keepRunning = 0
-                if len(msgs) >= __maxAtOnce:
-                    break
-            if len(msgs) > 0:
-                onReceive(msgs)
-                sys.stdout.flush()  # important,Python buffers far too much
+        msgs = []
+        line = sys.stdin.readline()
+        if line:
+            msgs.append(line)
+        else:  # an empty line means stdin has been closed
+            keepRunning = 0
+        if len(msgs) > 0:
+            onReceive(msgs)
+            sys.stdout.flush()  # important,Python buffers far too much
     sys.exit(0)
