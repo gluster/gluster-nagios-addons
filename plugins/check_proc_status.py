@@ -39,6 +39,7 @@ _quotadService = "Quota"
 _ctdbdService = "CTDB"
 checkIdeSmartCmdPath = utils.CommandPath(
     'check_ide_smart', '/usr/lib64/nagios/plugins/check_ide_smart')
+nagios_server_conf_path = nscautils.__NAGIOSSERVER_CONF
 
 
 def getBrickStatus(volInfo):
@@ -96,7 +97,8 @@ class App():
             if not hostName:
                 hostName = nscautils.getCurrentHostNameInNagiosServer()
                 if not hostName:
-                    logger.warn("Hostname is not configured")
+                    logger.warn("'hostname_in_nagios' is not configured "
+                                "in %s" % nagios_server_conf_path)
                     time.sleep(sleepTime)
                     continue
             status, msg = check_proc_util.getGlusterdStatus()
