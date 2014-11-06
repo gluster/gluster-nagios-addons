@@ -77,12 +77,14 @@ class TestDiscoverVolumes(TestCaseBase):
 
     def testDiscoverVolumesList(self):
         discover_volumes.glustercli.volumeInfo = self._mockGetVolumeInfo
-        volumesList = json.loads(discover_volumes.discoverVolumes(None, True))
+        status, output = discover_volumes.discoverVolumes(None, True)
+        volumesList = json.loads(output)
         self._verifyVolumeList(volumesList)
 
     def testDiscoverVolumesInfo(self):
         discover_volumes.glustercli.volumeInfo = self._mockGetVolumeInfo
-        volumesList = json.loads(discover_volumes.discoverVolumes("V1", False))
+        status, output = discover_volumes.discoverVolumes("V1", False)
+        volumesList = json.loads(output)
         self._verifyVolumeInfo(volumesList, "V1")
 
     def testAruguments(self):

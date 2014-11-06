@@ -50,7 +50,15 @@ def discoverVolumes(volumeName, list):
     }
     """
     resultlist = {}
-    volumes = glustercli.volumeInfo(volumeName)
+    try:
+        volumes = glustercli.volumeInfo(volumeName)
+    except glustercli.GlusterLockedException as e:
+        resultString = ("UNKNOWN: temporary error. %s" % '.'.join(e.err))
+        return utils.PluginStatusCode.UNKNOWN, resultString
+    except glustercli.GlusterCmdFailedException as e:
+        resultString = ("UNKNOWN: Failed to get the volume Information. "
+                        "%s" % '.'.join(e.err))
+        return utils.PluginStatusCode.UNKNOWN, resultString
     for key, volume in volumes.iteritems():
         volDict = {}
         volDict['name'] = key
@@ -74,7 +82,7 @@ def discoverVolumes(volumeName, list):
                                           'hostUuid': brick['hostUuid']})
         resultlist[key] = volDict
     resultString = json.dumps(resultlist)
-    return resultString
+    return utils.PluginStatusCode.OK, resultString
 
 
 def get_arg_parser():
@@ -89,6 +97,6 @@ def get_arg_parser():
 
 if __name__ == '__main__':
     args = get_arg_parser().parse_args()
-    resultString = discoverVolumes(args.volume, args.list)
+    status, resultString = discoverVolumes(args.volume, args.list)
     print resultString
-    sys.exit(utils.PluginStatusCode.OK)
+    sys.exit(status)
