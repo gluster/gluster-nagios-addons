@@ -100,7 +100,6 @@ AC_CONFIG_FILES([
 	config/nrpe
 	plugins/Makefile
 	plugins/nscautils.py
-	plugins/volcap/Makefile
 	tests/Makefile
 	tests/run_tests_local.sh
 	tests/run_tests.sh
