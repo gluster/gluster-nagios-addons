@@ -60,9 +60,7 @@ class TestGlusterSyslog(TestCaseBase):
         mock_send_to_nsca.assert_called_with("test-cluster",
                                              "Cluster - Quorum",
                                              utils.PluginStatusCode.CRITICAL,
-                                             "QUORUM: Server quorum lost "
-                                             "for volume dist. "
-                                             "Stopping local bricks. ")
+                                             "QUORUM: Server quorum lost.")
 
     @mock.patch('plugins.nscautils.getNagiosClusterName')
     @mock.patch('plugins.nscautils.send_to_nsca_subproc')

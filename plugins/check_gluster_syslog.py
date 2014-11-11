@@ -53,16 +53,17 @@ def processQuorumMsg(msgid, msg, level):
         # [MSGID: 106002] Server quorum lost for volume dist.
         #  Stopping local bricks.
         # [MSGID: 106001] Server quorum not met. Rejecting operation.
+        alertMsg = "QUORUM: Server quorum lost."
         pluginstatus = utils.PluginStatusCode.CRITICAL
     # elif msgid == 106003:
     elif "[MSGID: 106003]" in msg:
         # [MSGID: 106003] Server quorum regained for volume dist.
         #  Starting local bricks.
+        alertMsg = "QUORUM: Server quorum regained."
         pluginstatus = utils.PluginStatusCode.OK
 
     if pluginstatus >= 0:
         serviceName = "Cluster - Quorum"
-        alertMsg = "QUORUM:" + msg[msg.rfind(':') + 1:]
         nscautils.send_to_nsca_subproc(nscautils.getNagiosClusterName(),
                                        serviceName,
                                        pluginstatus,
