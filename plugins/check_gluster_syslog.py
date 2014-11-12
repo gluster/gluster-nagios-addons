@@ -53,13 +53,13 @@ def processQuorumMsg(msgid, msg, level):
         # [MSGID: 106002] Server quorum lost for volume dist.
         #  Stopping local bricks.
         # [MSGID: 106001] Server quorum not met. Rejecting operation.
-        alertMsg = "QUORUM: Server quorum lost."
+        alertMsg = "QUORUM: Cluster server-side quorum lost."
         pluginstatus = utils.PluginStatusCode.CRITICAL
     # elif msgid == 106003:
     elif "[MSGID: 106003]" in msg:
         # [MSGID: 106003] Server quorum regained for volume dist.
         #  Starting local bricks.
-        alertMsg = "QUORUM: Server quorum regained."
+        alertMsg = "QUORUM: Cluster server-side quorum regained."
         pluginstatus = utils.PluginStatusCode.OK
 
     if pluginstatus >= 0:
