@@ -37,6 +37,34 @@ def getVal(val):
         return 0
 
 
+def getLVdetails(filename, lvs):
+    dev_name = os.path.realpath(filename)
+
+    pool = ""
+    disk = {}
+    for a in lvs:
+        dev = os.path.realpath(a['LVM2_LV_PATH'])
+        if dev_name == dev:
+            if a['LVM2_LV_ATTR'][0] == 'V':
+                pool = a['LVM2_POOL_LV']
+                disk['thinLv'] = True
+                break
+            else:
+                disk['thinLv'] = False
+                return disk
+    else:
+        return None
+    for b in lvs:
+        if b['LVM2_LV_NAME'] == pool:
+            disk['actualUsedPercent'] = float(b['LVM2_DATA_PERCENT'])
+            disk['actualTotalSize'] = float(b['LVM2_LV_SIZE'])
+            disk['actualUsed'] = disk['actualTotalSize'] * disk[
+                'actualUsedPercent'] / 100
+            return disk
+    else:
+        return None
+
+
 def getUsageAndFree(command, path, crit, warn, lvm):
     disk = {'path': None, 'usePcent': 0, 'avail': 0,
             'used': 0, 'size': 0, 'fs': None,
@@ -78,6 +106,7 @@ def getUsageAndFree(command, path, crit, warn, lvm):
     disk['size'] = getVal(status[-5])
     disk['fs'] = status[-6]
     disk['usePcent'] = getVal(status[-2])
+
     if disk['usePcent'] >= crit:
         disk['statusCode'] = utils.PluginStatusCode.CRITICAL
     elif disk['usePcent'] >= warn:
@@ -85,7 +114,6 @@ def getUsageAndFree(command, path, crit, warn, lvm):
     elif disk['usePcent'] < warn:
         disk['statusCode'] = utils.PluginStatusCode.OK
     disk['availPcent'] = 100 - disk['usePcent']
-
     return disk
 
 
@@ -150,6 +178,10 @@ def parse_input():
     parser.add_option('-s', action="store_true", default=False,
                       dest='showErrorDisk',
                       help='Show critical or warning disks in the status')
+    parser.add_option('-t', '--thinPool', action="store_true",
+                      dest='thinPool',
+                      help='Lists detail of underlying thin pool',
+                      default=False)
     return parser.parse_args()
 
 
@@ -182,7 +214,8 @@ def _getUnitAndType(val):
 
 
 def showDiskUsage(warn, crit, mountPaths, toListInode, usage=False,
-                  isLvm=False, ignoreError=False, showErrorDisk=True):
+                  isLvm=False, ignoreError=False, showErrorDisk=True,
+                  thinPool=False):
     diskPerf = []
     warnList = []
     critList = []
@@ -194,9 +227,42 @@ def showDiskUsage(warn, crit, mountPaths, toListInode, usage=False,
     noOfMounts = len(mountPaths)
     maxPercentUsed = 0
 
+    if thinPool:
+        rc, out, err = utils.execCmd(["lvm"] +
+                                     ("vgs --unquoted --noheading " +
+                                      "--nameprefixes --separator : " +
+                                      "--nosuffix --units g -o " +
+                                      "lv_path,data_percent,pool_lv,lv_attr,"
+                                      "lv_size,lv_name").split())
+        if rc == 0:
+            res = []
+            for i in out:
+                tem = i.split(":")
+                dct = {}
+                for j in tem:
+                    tp = j.split("=")
+                    dct[tp[0].replace(" ", "")] = tp[1]
+                res.append(dct)
+        else:
+            thinPool = False
+
     for path in mountPaths:
         disk = getDisk(path, crit, warn, usage, isLvm)
         inode = getInode(path, crit, warn, isLvm)
+        if thinPool:
+            thinLv = getLVdetails(disk['fs'], res)
+            if thinLv and thinLv['thinLv']:
+                if disk['usePcent'] >= crit or thinLv[
+                        'actualUsedPercent'] >= crit:
+                    disk['statusCode'] = utils.PluginStatusCode.CRITICAL
+                elif disk['usePcent'] >= warn or thinLv[
+                        'actualUsedPercent'] >= warn:
+                    disk['statusCode'] = utils.PluginStatusCode.WARNING
+                elif disk['usePcent'] < warn or thinLv[
+                        'actualUsedPercent'] < warn:
+                    disk['statusCode'] = utils.PluginStatusCode.OK
+            else:
+                thinPool = False
 
         if disk['path'] in mounts:
             continue
@@ -223,13 +289,24 @@ def showDiskUsage(warn, crit, mountPaths, toListInode, usage=False,
                     crit * inode['used'] / 100,
                     inode['size'])
         elif disk['path']:
-            data = "%s=%.2f%%;%s;%s;0;%s" % (
-                disk['path'],
-                disk['usePcent'],
-                warn,
-                crit,
-                disk['size'])
-
+            if thinPool and thinLv['thinLv']:
+                data = "Virtual=%.2f%%;%s;%s;0;%s" % (
+                    disk['usePcent'],
+                    warn,
+                    crit,
+                    disk['size'])
+                data += " Thin-pool=%.2f%%;%s;%s;0;%.1f" % (
+                    thinLv['actualUsedPercent'],
+                    warn,
+                    crit,
+                    thinLv['actualTotalSize'])
+            else:
+                data = "%s=%.2f%%;%s;%s;0;%s" % (
+                    disk['path'],
+                    disk['usePcent'],
+                    warn,
+                    crit,
+                    disk['size'])
             if toListInode:
                 data += " %s=%.2f%%;%s;%s;0;%s" % (
                     inode['path'],
@@ -299,22 +376,26 @@ def showDiskUsage(warn, crit, mountPaths, toListInode, usage=False,
     if not usage:
         totUsedSz, totUsedSzUnit = _getUnitAndType(totalUsed)
         totSpaceSz, totSpaceSzUnit = _getUnitAndType(totalSize)
-        usageMsg = "%.1f%% used (%s%s out of %s%s)\n" % (totUsagePercent,
-                                                         totUsedSz,
-                                                         totUsedSzUnit,
-                                                         totSpaceSz,
-                                                         totSpaceSzUnit)
+        usageMsg = "%.1f%% used (%s%s out of %s%s)" % (totUsagePercent,
+                                                       totUsedSz,
+                                                       totUsedSzUnit,
+                                                       totSpaceSz,
+                                                       totSpaceSzUnit)
+        if thinPool and thinLv['thinLv']:
+            usageMsg += " [Thin-pool: %.1f%% (%.1fG out of %.1fG)]" % (
+                thinLv['actualUsedPercent'],
+                thinLv['actualUsed'],
+                thinLv['actualTotalSize'])
     else:
-        usageMsg = "%.1f%% used (%s%s out of %s%s)\n" % (totUsagePercent,
-                                                         totalUsed,
-                                                         usage,
-                                                         totalSize,
-                                                         usage)
-
+        usageMsg = "%.1f%% used (%s%s out of %s%s)" % (totUsagePercent,
+                                                       totalUsed,
+                                                       usage,
+                                                       totalSize,
+                                                       usage)
     if showErrorDisk:
         msg = "%s\n:mount(s): (%s)" % (errorDiskMsg, msg)
     else:
-        msg = "%s:mount(s): (%s)" % (usageMsg, msg)
+        msg = "%s\n:mount(s): (%s)" % (usageMsg, msg)
 
     return statusCode, msg, diskPerf
 
@@ -337,7 +418,8 @@ if __name__ == '__main__':
                                               options.usage,
                                               options.lvm,
                                               options.ignore,
-                                              options.showErrorDisk)
+                                              options.showErrorDisk,
+                                              options.thinPool)
 
     if utils.PluginStatusCode.CRITICAL == statusCode:
         sys.stdout.write("%s : %s | %s\n" % (
