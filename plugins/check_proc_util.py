@@ -28,6 +28,9 @@ from glusternagios import storage
 _checkProc = utils.CommandPath('check_proc',
                                '/usr/lib64/nagios/plugins/check_procs')
 
+_chkConfig = utils.CommandPath('chkconfig',
+                               '/sbin/chkconfig', '/usr/sbin/chkconfig')
+
 _glusterVolPath = "/var/lib/glusterd/vols"
 _checkNfsCmd = [_checkProc.cmd, "-c", "1:", "-C", "glusterfs", "-a", "nfs"]
 _checkShdCmd = [_checkProc.cmd, "-c", "1:", "-C", "glusterfs", "-a",
@@ -38,6 +41,7 @@ _checkQuotaCmd = [_checkProc.cmd, "-c", "1:", "-C", "glusterfs", "-a",
 _checkBrickCmd = [_checkProc.cmd, "-C", "glusterfsd"]
 _checkGlusterdCmd = [_checkProc.cmd, "-c", "1:", "-w", "1:1", "-C", "glusterd"]
 _checkCtdbCmd = [_checkProc.cmd, "-c", "1:", "-C", "ctdbd"]
+_chkConfigCtdb = [_chkConfig.cmd, "ctdb"]
 checkIdeSmartCmdPath = utils.CommandPath(
     'check_ide_smart', '/usr/lib64/nagios/plugins/check_ide_smart')
 
@@ -126,6 +130,10 @@ def getCtdbStatus(smbStatus, nfsStatus):
 
     status, msg, error = utils.execCmd(_checkCtdbCmd)
     if status != utils.PluginStatusCode.OK:
+        status, msg, error = utils.execCmd(_chkConfigCtdb)
+        if status == utils.PluginStatusCode.OK:
+            return (utils.PluginStatusCode.CRITICAL,
+                    "CTDB process is not running")
         return utils.PluginStatusCode.UNKNOWN, "CTDB not configured"
 
     # 'cdtb nodestatus' command will return the output in following format
