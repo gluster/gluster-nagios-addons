@@ -290,7 +290,8 @@ def showDiskUsage(warn, crit, mountPaths, toListInode, usage=False,
                     inode['size'])
         elif disk['path']:
             if thinPool and thinLv['thinLv']:
-                data = "Virtual=%.2f%%;%s;%s;0;%s" % (
+                data = "%s=%.2f%%;%s;%s;0;%s" % (
+                    disk['path'],
                     disk['usePcent'],
                     warn,
                     crit,
