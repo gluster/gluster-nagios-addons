@@ -24,6 +24,7 @@ test_modules = \
 	check_proc_test_data.py \
 	test_cpu.py \
 	test_cpu_dataFile.py \
+	test_mounts.py \
 	test_gluster_proc.py \
 	test_memory.py \
 	test_memory_dataFile.py \
@@ -37,6 +38,7 @@ test_modules = \
 dist_glusternagiosaddonstests_DATA = \
 	getLatestStat_exception.xml \
 	getLatestStat_success.xml \
+	mounts.txt \
 	$(NULL)
 
 dist_glusternagiosaddonstests_PYTHON = \

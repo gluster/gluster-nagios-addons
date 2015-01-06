@@ -9,8 +9,8 @@ crond_DATA = \
 	$(NULL)
 
 dist_glusternagiosplugins_PYTHON = \
-	check_disk_and_inode.py \
 	check_gluster_syslog.py \
+	check_mounts.py \
 	check_vol_utilization.py \
 	check_volume_status.py \
 	check_proc_status.py \
