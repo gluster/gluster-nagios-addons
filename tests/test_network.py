@@ -97,7 +97,7 @@ interfaces = {'em1': {'flags': None, 'ipaddr': None},
 class networkTests(TestCaseBase):
     @mock.patch('plugins.network._getNetworkInterfaces')
     def test_network_default(self, _getNetworkInterfaces_mock):
-        expected = (0, "OK: tun0:UP,virbr0:UP,enp0s29u1u2:UP |"
+        expected = (0, "OK: tun0:UP,virbr0:DOWN,enp0s29u1u2:UP |"
                     "tun0.rxpck=0.10 tun0.txpck=0.08 "
                     "tun0.rxkB=0.01 tun0.txkB=0.01 "
                     "virbr0.rxpck=0.00 virbr0.txpck=0.00 "
@@ -112,7 +112,7 @@ class networkTests(TestCaseBase):
     @mock.patch('plugins.network._getNetworkInterfaces')
     def test_network_all(self, _getNetworkInterfaces_mock):
         expected = (0, "OK: tun0:UP,wlp3s0:DOWN,lo:UP,virbr0-nic:DOWN,"
-                    "virbr0:UP,enp0s29u1u2:UP,em1:DOWN |"
+                    "virbr0:DOWN,enp0s29u1u2:UP,em1:DOWN |"
                     "tun0.rxpck=0.10 tun0.txpck=0.08 "
                     "tun0.rxkB=0.01 tun0.txkB=0.01 "
                     "wlp3s0.rxpck=0.00 wlp3s0.txpck=0.00 "
@@ -146,7 +146,7 @@ class networkTests(TestCaseBase):
 
     @mock.patch('plugins.network._getNetworkInterfaces')
     def test_network_excludes(self, _getNetworkInterfaces_mock):
-        expected = (0, "OK: virbr0:UP,enp0s29u1u2:UP |"
+        expected = (0, "OK: virbr0:DOWN,enp0s29u1u2:UP |"
                     "virbr0.rxpck=0.00 virbr0.txpck=0.00 "
                     "virbr0.rxkB=0.00 virbr0.txkB=0.00 "
                     "enp0s29u1u2.rxpck=1.15 enp0s29u1u2.txpck=1.65 "
