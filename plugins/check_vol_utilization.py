@@ -44,11 +44,11 @@ def showVolumeUtilization(vname, warnLevel, critLevel):
                          "Volume Utilization Data\n")
         sys.exit(utils.PluginStatusCode.CRITICAL)
     volumeCapacity = computeVolumeStats(data)
-    #total size in KB
+    # total size in KB
     total_size = volumeCapacity['sizeTotal'] / BYTES_IN_KB
-    #Available free size in KB
+    # Available free size in KB
     free_size = volumeCapacity['sizeFree'] / BYTES_IN_KB
-    #used size in KB
+    # used size in KB
     used_size = volumeCapacity['sizeUsed'] / BYTES_IN_KB
     vol_utilization = (used_size / total_size) * 100
 
