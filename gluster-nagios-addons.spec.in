@@ -132,7 +132,7 @@ fi
 
 cat >> %{_sysconfdir}/nagios/nrpe.cfg <<EOF
 %{_start_conf_section}
-command[check_disk_and_inode]=sudo %{_libdir}/nagios/plugins/gluster/check_mounts.py -w 80 -c 90
+command[check_disk_and_inode]=sudo %{_libdir}/nagios/plugins/gluster/check_mounts.py -w 80 -c 90 -i / -i /boot -i /home -i /var -i /usr
 command[check_memory]=%{_libdir}/nagios/plugins/gluster/memory.py -w 80 -c 90 -t 2
 command[check_swap_usage]=%{_libdir}/nagios/plugins/gluster/swap.py -w 80 -c 90 -t 2
 command[check_cpu_multicore]=%{_libdir}/nagios/plugins/gluster/cpu.py -w 80 -c 90 -t 2
