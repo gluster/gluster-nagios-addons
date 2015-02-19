@@ -275,7 +275,7 @@ class diskTests(TestCaseBase):
                    "90;0;1048576 /run/gluster/snaps/680bdbbeed4744a9bcba941" \
                    "580a5feed/brick1.thinpool=1.210%;80;90;0;1.500 /run/" \
                    "gluster/snaps/680bdbbeed4744a9bcba941580a5feed/brick1." \
-                   "metadata=1.370%;80;90;0;0.004"
+                   "thinpool-metadata=1.370%;80;90;0;0.004"
         self.assertEquals(actual, expected)
 
     def test_getStatusInfo(self):
@@ -364,7 +364,7 @@ class diskTests(TestCaseBase):
                        '/brick/brk1=3.195%;2;4;0;0.990 '
                        '/brick/brk1.inode=1.000%;2;4;0;1048576 '
                        '/brick/brk1.thinpool=1.210%;2;4;0;1.500 '
-                       '/brick/brk1.metadata=1.370%;2;4;0;0.004',
+                       '/brick/brk1.thinpool-metadata=1.370%;2;4;0;0.004',
                        '/home=0.241%;2;4;0;17.835 '
                        '/home.inode=1.000%;2;4;0;1196032']
         warning = 2

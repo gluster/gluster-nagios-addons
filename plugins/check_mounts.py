@@ -89,8 +89,8 @@ def _getPerfdata(detail, warn, crit):
     if detail['thinpool_size']:
         template += " {mount_point}.thinpool={thinpool_used_percent:.3f}%;" \
                     "{warn};{crit};0;{thinpool_size:.3f} {mount_point}." \
-                    "thinpool-metadata={metadata_used_percent:.3f}%;{warn};{crit};0;" \
-                    "{metadata_size:.3f}"
+                    "thinpool-metadata={metadata_used_percent:.3f}" \
+                    "%;{warn};{crit};0;{metadata_size:.3f}"
     return template.format(warn=warn, crit=crit, **detail)
 
 
@@ -218,10 +218,10 @@ def getMountStats(exclude, include):
             out['metadata_used_percent'] = float(
                 lvs[thinpool]['LVM2_METADATA_PERCENT'])
             out['thinpool_free'] = out['thinpool_size'] * (
-                1 - out['thinpool_used_percent']/100.0)
+                1 - out['thinpool_used_percent'] / 100.0)
             out['thinpool_used'] = out['thinpool_size'] - out['thinpool_free']
             out['metadata_free'] = out['metadata_size'] * (
-                1 - out['metadata_used_percent']/100.0)
+                1 - out['metadata_used_percent'] / 100.0)
             out['metadata_used'] = out['metadata_size'] - out['metadata_free']
         return out
 
