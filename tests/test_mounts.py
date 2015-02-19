@@ -63,7 +63,7 @@ class diskTests(TestCaseBase):
                 'device': '/proc/bus/usb',
                 'mountOptions': 'rw,relatime',
                 'fsType': 'usbfs'}
-            }
+        }
         actual = check_mounts._parseProcMounts()
         self.assertEquals(expected, actual)
 
@@ -123,7 +123,7 @@ class diskTests(TestCaseBase):
                 'LVM2_LV_SIZE': '1024.00',
                 'LVM2_LV_UUID': 'jTHoCy-qFBS-K1FS-WSUp-SG8J-4R7W-2hI01n',
                 'LVM2_LV_METADATA_SIZE': '4.00'}
-            }
+        }
         actual = check_mounts.getLvs()
         self.assertEquals(expected, actual)
 
