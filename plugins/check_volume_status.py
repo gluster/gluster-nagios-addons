@@ -83,7 +83,7 @@ def getVolumeQuotaStatus(args):
         return utils.PluginStatusCode.OK, "QUOTA: OK"
 
 
-def getVolumeSelfHealStatus(args):
+def getVolumeSelfHealSplitBrainStatus(args):
     try:
         volume = glustercli.volumeHealSplitBrainStatus(args.volume)
     except glustercli.GlusterLockedException as e:
@@ -96,7 +96,7 @@ def getVolumeSelfHealStatus(args):
 
     if volume.get(args.volume) is None:
         exitstatus = utils.PluginStatusCode.UNKNOWN
-        message = "UNKNOWN: Volume self heal info not found"
+        message = "UNKNOWN: Volume self heal split-brain info not found"
     else:
         if (volume[args.volume]['status'] == glustercli.
                 VolumeSplitBrainStatus.NOTAPPLICABLE):
@@ -105,11 +105,11 @@ def getVolumeSelfHealStatus(args):
         elif (volume[args.volume]['status'] == glustercli.
                 VolumeSplitBrainStatus.OK):
             exitstatus = utils.PluginStatusCode.OK
-            message = "No unsynced entries present"
+            message = "No split brain state entries found."
         elif (volume[args.volume]['status'] == glustercli.
                 VolumeSplitBrainStatus.SPLITBRAIN):
-            exitstatus = utils.PluginStatusCode.WARNING
-            message = ("Unsynced entries present %s"
+            exitstatus = utils.PluginStatusCode.CRITICAL
+            message = ("%s entries in split-brain state found."
                        % (volume[args.volume]['unsyncedentries']))
     return exitstatus, message
 
@@ -173,7 +173,7 @@ if __name__ == '__main__':
     if args.type == "quota":
         exitstatus, message = getVolumeQuotaStatus(args)
     if args.type == "self-heal":
-        exitstatus, message = getVolumeSelfHealStatus(args)
+        exitstatus, message = getVolumeSelfHealSplitBrainStatus(args)
     if args.type == "geo-rep":
         exitstatus, message = getVolumeGeoRepStatus(args)
     print message
