@@ -50,8 +50,8 @@ class memoryTests(TestCaseBase):
         )
 
     def _showMemStatus_warning_test(self):
-        w = 40
-        c = 60
+        w = 20
+        c = 30
         actual = memory.showMemStat(
             w, c,
             test_memory_dataFile.SHOW_MEMORY_STATUS_WARNING_IP
@@ -62,8 +62,8 @@ class memoryTests(TestCaseBase):
         )
 
     def _showMemStatus_critical_test(self):
-        w = 30
-        c = 40
+        w = 10
+        c = 20
         actual = memory.showMemStat(
             w, c,
             test_memory_dataFile.SHOW_MEMORY_STATUS_CRITICAL_IP

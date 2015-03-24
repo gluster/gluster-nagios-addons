@@ -55,12 +55,13 @@ def showMemStat(warning, critical, s):
 
     crit_value = (totalMem * critical) / 100
     war_value = (totalMem * warning) / 100
-    if utils.convertSize(int(s['memory']['memused']),
-                         "KB", "GB") >= crit_value:
+    usedMem = utils.convertSize(int(s['memory']['memused']) - int(
+        s['memory']['cached']), "KB", "GB")
+    usedPercent = usedMem * 100.0 / totalMem
+    if usedMem >= crit_value:
         pl_op["message"] = utils.PluginStatus.CRITICAL
         pl_op['exit_status'] = utils.PluginStatusCode.CRITICAL
-    elif utils.convertSize(int(s['memory']['memused']),
-                           "KB", "GB") >= war_value:
+    elif usedMem >= war_value:
         pl_op["message"] = utils.PluginStatus.WARNING
         pl_op['exit_status'] = utils.PluginStatusCode.WARNING
     else:
@@ -71,16 +72,14 @@ def showMemStat(warning, critical, s):
                              "Total=%.2fGB;%.2f;%.2f;0;%.2f"
                              " Used=%.2fGB Buffered=%.2fGB"
                              " Cached=%.2fGB" % (
-                                 float(s['memory']['memused-percent']),
-                                 utils.convertSize(int(s['memory']['memused']),
-                                                   "KB", "GB"),
+                                 usedPercent,
+                                 usedMem,
                                  totalMem,
                                  totalMem,
                                  war_value,
                                  crit_value,
                                  totalMem,
-                                 utils.convertSize(int(s['memory']['memused']),
-                                                   "KB", "GB"),
+                                 usedMem,
                                  utils.convertSize(int(s['memory']['buffers']),
                                                    "KB", "GB"),
                                  utils.convertSize(int(s['memory']['cached']),

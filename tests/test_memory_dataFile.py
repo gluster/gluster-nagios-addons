@@ -35,8 +35,8 @@ SHOW_MEMORY_STATUS_OK_IP = \
                 'buffers': '376704', 'dirty': '1696'}}
 
 SHOW_MEMORY_STATUS_OK_OP = \
-    {'message': "OK- 46.97% used(3.53GB out of 7.51GB)|"
-     "Total=7.51GB;4.50;5.25;0;7.51 Used=3.53GB "
+    {'message': "OK- 27.66% used(2.08GB out of 7.51GB)|"
+     "Total=7.51GB;4.50;5.25;0;7.51 Used=2.08GB "
      "Buffered=0.36GB Cached=1.45GB", 'exit_status': 0}
 
 SHOW_MEMORY_STATUS_WARNING_IP = \
@@ -52,8 +52,8 @@ SHOW_MEMORY_STATUS_WARNING_IP = \
                 'buffers': '376704', 'dirty': '1696'}}
 
 SHOW_MEMORY_STATUS_WARNING_OP = \
-    {'message': "WARNING- 46.97% used(3.53GB out of 7.51GB)"
-     "|Total=7.51GB;3.00;4.50;0;7.51 Used=3.53GB"
+    {'message': "WARNING- 27.66% used(2.08GB out of 7.51GB)"
+     "|Total=7.51GB;1.50;2.25;0;7.51 Used=2.08GB"
      " Buffered=0.36GB Cached=1.45GB", 'exit_status': 1}
 
 SHOW_MEMORY_STATUS_CRITICAL_IP = \
@@ -69,8 +69,8 @@ SHOW_MEMORY_STATUS_CRITICAL_IP = \
                 'buffers': '376704', 'dirty': '1696'}}
 
 SHOW_MEMORY_STATUS_CRITICAL_OP = \
-    {'message': "CRITICAL- 46.97% used(3.53GB out of 7.51GB)|"
-     "Total=7.51GB;2.25;3.00;0;7.51 Used=3.53GB "
+    {'message': "CRITICAL- 27.66% used(2.08GB out of 7.51GB)|"
+     "Total=7.51GB;0.75;1.50;0;7.51 Used=2.08GB "
      "Buffered=0.36GB Cached=1.45GB", 'exit_status': 2}
 
 SHOW_MEMORY_STATUS_EXCEPTION_IP = \
