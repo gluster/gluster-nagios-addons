@@ -31,7 +31,11 @@ _checkProc = utils.CommandPath('check_proc',
 _chkConfig = utils.CommandPath('chkconfig',
                                '/sbin/chkconfig', '/usr/sbin/chkconfig')
 
+_chkService = utils.CommandPath('service',
+                                '/sbin/service', 'usr/sbin/service')
+
 _glusterVolPath = "/var/lib/glusterd/vols"
+_checkGlusterService = [_chkService.cmd, "glusterd", "status"]
 _checkNfsCmd = [_checkProc.cmd, "-c", "1:", "-C", "glusterfs", "-a", "nfs"]
 _checkShdCmd = [_checkProc.cmd, "-c", "1:", "-C", "glusterfs", "-a",
                 "glustershd"]
@@ -39,7 +43,6 @@ _checkSmbCmd = [_checkProc.cmd, "-c", "1:", "-C", "smbd"]
 _checkQuotaCmd = [_checkProc.cmd, "-c", "1:", "-C", "glusterfs", "-a",
                   "quotad"]
 _checkBrickCmd = [_checkProc.cmd, "-C", "glusterfsd"]
-_checkGlusterdCmd = [_checkProc.cmd, "-c", "1:", "-w", "1:1", "-C", "glusterd"]
 _checkCtdbCmd = [_checkProc.cmd, "-c", "1:", "-C", "ctdbd"]
 _chkConfigCtdb = [_chkConfig.cmd, "ctdb"]
 checkIdeSmartCmdPath = utils.CommandPath(
@@ -232,7 +235,7 @@ def getShdStatus(volInfo):
 
 
 def getGlusterdStatus():
-    status, msg, error = utils.execCmd(_checkGlusterdCmd)
+    status, msg, error = utils.execCmd(_checkGlusterService)
     if status == utils.PluginStatusCode.OK:
         return status, "Process glusterd is running"
     elif status == utils.PluginStatusCode.CRITICAL:
