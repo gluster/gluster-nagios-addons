@@ -40,6 +40,7 @@ _checkNfsCmd = [_checkProc.cmd, "-c", "1:", "-C", "glusterfs", "-a", "nfs"]
 _checkShdCmd = [_checkProc.cmd, "-c", "1:", "-C", "glusterfs", "-a",
                 "glustershd"]
 _checkSmbCmd = [_checkProc.cmd, "-c", "1:", "-C", "smbd"]
+_chkConfigSmb = [_chkConfig.cmd, "smb"]
 _checkQuotaCmd = [_checkProc.cmd, "-c", "1:", "-C", "glusterfs", "-a",
                   "quotad"]
 _checkBrickCmd = [_checkProc.cmd, "-C", "glusterfsd"]
@@ -175,6 +176,10 @@ def getSmbStatus(volInfo):
     if status == utils.PluginStatusCode.OK:
         return status, "Process smb is running"
 
+    smbConfigStat, msg, error = utils.execCmd(_chkConfigSmb)
+    if smbConfigStat != utils.PluginStatusCode.OK:
+        return utils.PluginStatusCode.OK, "OK: SMB not configured"
+
     # if smb is not running and any of the volume uses smb
     # then its required to alert the user
     for volume, volumeInfo in volInfo.iteritems():
@@ -183,10 +188,12 @@ def getSmbStatus(volInfo):
         cifsStatus = volumeInfo.get('options', {}).get('user.cifs', 'enable')
         smbStatus = volumeInfo.get('options', {}).get('user.smb', 'enable')
         if cifsStatus == 'enable' and smbStatus == 'enable':
+            # SMB configured, service not running
             msg = "CRITICAL: Process smb is not running"
             status = utils.PluginStatusCode.CRITICAL
             break
     else:
+        # No volumes available or Non of the volumes are CIFS enabled
         msg = "OK: No gluster volume uses smb"
         status = utils.PluginStatusCode.OK
     return status, msg
