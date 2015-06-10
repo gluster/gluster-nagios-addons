@@ -90,7 +90,7 @@ def getVolumeSelfHealSplitBrainStatus(args):
         out = ("UNKNOWN: Glusterd cannot be queried. %s" % '.'.join(e.err))
         return utils.PluginStatusCode.UNKNOWN, out
     except glustercli.GlusterCmdFailedException as e:
-        out = ("Self heal status could not be determined. %s"
+        out = ("Volume split brain status could not be determined. %s"
                % '.'.join(e.err))
         return utils.PluginStatusCode.WARNING, out
 
