@@ -242,12 +242,13 @@ def getShdStatus(volInfo):
 
 
 def getGlusterdStatus():
-    status, msg, error = utils.execCmd(_checkGlusterService)
-    if status == utils.PluginStatusCode.OK:
-        return status, "Process glusterd is running"
-    elif status == utils.PluginStatusCode.CRITICAL:
-        return status, "Process glusterd is not running"
-    return status, msg[0] if len(msg) > 0 else ""
+    retCode, msg, error = utils.execCmd(_checkGlusterService)
+    if retCode == 0:
+        return utils.PluginStatusCode.OK, "Process glusterd is running"
+    elif retCode == 3:
+        return utils.PluginStatusCode.CRITICAL, \
+            "Process glusterd is not running"
+    return utils.PluginStatusCode.CRITICAL, msg[0] if len(msg) > 0 else ""
 
 
 def hasBricks(hostUuid, bricks):
