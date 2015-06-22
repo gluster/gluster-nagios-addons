@@ -30,7 +30,7 @@ from glusternagios import utils
 from glusternagios import glustercli
 
 
-_nfsService = "NFS"
+_nfsService = "Gluster NFS"
 _shdService = "Self-Heal"
 _smbService = "SMB"
 _brickService = "Brick - %s"
