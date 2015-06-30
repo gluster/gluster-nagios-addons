@@ -58,7 +58,7 @@ class TestGlusterSyslog(TestCaseBase):
                    "Stopping local bricks. ")
         check_gluster_syslog.processMsg(message)
         mock_send_to_nsca.assert_called_with("test-cluster",
-                                             "Cluster - Quorum",
+                                             "Cluster - Quorum Status",
                                              utils.PluginStatusCode.CRITICAL,
                                              "QUORUM: Cluster server-side "
                                              "quorum lost.")

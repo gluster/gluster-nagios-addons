@@ -63,7 +63,7 @@ def processQuorumMsg(msgid, msg, level):
         pluginstatus = utils.PluginStatusCode.OK
 
     if pluginstatus >= 0:
-        serviceName = "Cluster - Quorum"
+        serviceName = "Cluster - Quorum Status"
         nscautils.send_to_nsca_subproc(nscautils.getNagiosClusterName(),
                                        serviceName,
                                        pluginstatus,
