@@ -29,11 +29,13 @@ class TestDiscoverVolumes(TestCaseBase):
         result['V1'] = {"bricksInfo": [{"name": "172.16.53.1:/bricks/v1-1",
                                         "hostUuid": "0000-1111"}],
                         "volumeType": "DISTRIBUTE", "volumeName": "V1",
-                        "replicaCount": "1"}
+                        "replicaCount": "1", "disperseCount": "4",
+                        "redundancyCount": "2"}
         result['V2'] = {"bricksInfo": [{"name": "172.16.53.2:/bricks/v2-1",
                                         "hostUuid": "0000-1112"}],
                         "volumeType": "DISTRIBUTE", "volumeName": "V2",
-                        "replicaCount": "1"}
+                        "replicaCount": "1", "disperseCount": "4",
+                        "redundancyCount": "2"}
         return result
 
     def _mockGetVolumeInfo(self, volumeName):

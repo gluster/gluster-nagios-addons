@@ -75,6 +75,8 @@ def discoverVolumes(volumeName, list):
 
             volDict['replicaCount'] = volume['replicaCount']
             volDict['bricks'] = []
+            volDict['disperseCount'] = volume['disperseCount']
+            volDict['redundancyCount'] = volume['redundancyCount']
             for brick in volume['bricksInfo']:
                 brickproplist = brick['name'].split(':')
                 volDict['bricks'].append({'brickaddress': brickproplist[0],
